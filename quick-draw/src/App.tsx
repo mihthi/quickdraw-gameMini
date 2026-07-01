@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import img1 from "../assets/img1.jpg"; // Đã sửa đường dẫn chuẩn xác dựa trên cấu trúc thư mục của bạn
 import { REAL_IMAGES } from './imageLibrary';
-// --- MOCK DATA ---
+// --- MOCK DATA ---  
 const MOCK_DRAWINGS = [
   { id: 1, word: 'Máy bay', user: 'Bạn', emoji: '✈️', shared: false },
   { id: 2, word: 'Quả táo', user: 'Bạn', emoji: '🍎', shared: true },
