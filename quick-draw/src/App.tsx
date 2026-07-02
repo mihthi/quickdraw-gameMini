@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 //import img1 from "../assets/img1.jpg"; // Đã sửa đường dẫn chuẩn xác dựa trên cấu trúc thư mục của bạn
 import { REAL_IMAGES } from './imageLibrary';
+import { supabase } from './supabaseClient';
 
 const img1 = "/assets/img1.jpg";
 // --- MOCK DATA ---  
@@ -27,14 +28,56 @@ export default function DrawingGameApp() {
   const [currentRound, setCurrentRound] = useState(0);
   const [hintsLeft, setHintsLeft] = useState(3);
 
-  const handleStartGame = () => {
-    setCurrentRound(0);
-    setHintsLeft(3);
-    setCurrentScreen('ready');
+  // 1. TẠO STATE MỚI ĐỂ LƯU 3 TỪ KHÓA SẼ CHƠI
+  const [gameDrawings, setGameDrawings] = useState<any[]>([]);
+  const [isStarting, setIsStarting] = useState(false); // Trạng thái loading khi đang lấy từ khóa
+
+  // 2. HÀM BẮT ĐẦU GAME & LẤY TỪ KHÓA NGẪU NHIÊN TỪ SUPABASE
+  const handleStartGame = async () => {
+    setIsStarting(true);
+    try {
+      // Thay 'game_words' bằng tên bảng chứa 20 từ khóa thực tế của bạn trên Supabase
+      const { data, error } = await supabase.from('game_words').select('*');
+      
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        // Thuật toán Fisher-Yates (Hoặc sort ngẫu nhiên) để xáo trộn 20 từ khóa
+        const shuffledWords = [...data].sort(() => 0.5 - Math.random());
+        
+        // Lấy đúng 3 từ đầu tiên
+        const random3Words = shuffledWords.slice(0, 3).map((dbWord, index) => ({
+          id: index + 1,       // Tạo ID ảo cho lượt chơi này
+          word: dbWord.word,   // Tên từ khóa (VD: Quả táo)
+          emoji: dbWord.emoji, // Biểu tượng (VD: 🍎)
+          label: dbWord.label, // Dùng để nạp cho AI nhận diện sau này
+          user: 'Bạn',
+          shared: false,
+          drawingData: null    // Chuẩn bị sẵn chỗ để mốt lưu chuỗi tọa độ JSON nét vẽ
+        }));
+
+        setGameDrawings(random3Words); // Nạp 3 từ khóa vào bộ nhớ game
+        setCurrentRound(0);
+        setHintsLeft(3);
+        setCurrentScreen('ready'); // Chuyển sang màn hình Sẵn sàng
+      }
+    } catch (error) {
+      console.error("Lỗi khi tải danh sách từ khóa:", error);
+      alert("Không thể tải từ khóa, vui lòng kiểm tra kết nối!");
+    } finally {
+      setIsStarting(false);
+    }
   };
 
-  const handleNextRound = () => {
-    if (currentRound < MOCK_DRAWINGS.length - 1) {
+  const handleNextRound = (drawingData: any) => {
+    // Lưu tọa độ nét vẽ thực tế vào từ khóa hiện tại
+    setGameDrawings(prev => {
+      const updated = [...prev];
+      updated[currentRound].drawingData = drawingData;
+      return updated;
+    });
+
+    if (currentRound < gameDrawings.length - 1) {
       setCurrentRound(prev => prev + 1);
       setCurrentScreen('ready');
     } else {
@@ -42,26 +85,31 @@ export default function DrawingGameApp() {
     }
   };
 
-  const currentWordObj = MOCK_DRAWINGS[currentRound] || MOCK_DRAWINGS[0];
+  const currentWordObj = gameDrawings[currentRound] || null;
 
   const renderScreen = () => {
     switch (currentScreen) {
-      case 'home': return <HomeScreen setScreen={setCurrentScreen} onStart={handleStartGame} />;
-      case 'ready': return <ReadyScreen setScreen={setCurrentScreen} currentWord={currentWordObj} />;
-      case 'game': return <GameScreen setScreen={setCurrentScreen} currentWord={currentWordObj} onNextRound={handleNextRound} hintsLeft={hintsLeft} setHintsLeft={setHintsLeft} />;
-      case 'summary': return <SummaryScreen setScreen={setCurrentScreen} setSelectedDrawing={setSelectedDrawing} />;
-      case 'detail': return <DetailScreen setScreen={setCurrentScreen} drawing={selectedDrawing} />;
-      case 'community': return <CommunityScreen setScreen={setCurrentScreen} />;
-      default: return <HomeScreen setScreen={setCurrentScreen} onStart={handleStartGame} />;
+      case 'home': 
+        // Truyền thêm prop isStarting để làm hiệu ứng loading cho nút bấm
+        return <HomeScreen setScreen={setCurrentScreen} onStart={handleStartGame} isStarting={isStarting} />;
+      case 'ready': 
+        return <ReadyScreen setScreen={setCurrentScreen} currentWord={currentWordObj} />;
+      case 'game': 
+        return <GameScreen setScreen={setCurrentScreen} currentWord={currentWordObj} onNextRound={handleNextRound} hintsLeft={hintsLeft} setHintsLeft={setHintsLeft} />;
+      case 'summary': 
+        // Truyền mảng 3 từ khóa vào màn hình tổng kết để nó biết phải in ra cái gì
+        return <SummaryScreen setScreen={setCurrentScreen} setSelectedDrawing={setSelectedDrawing} gameDrawings={gameDrawings} />;
+      case 'detail': 
+        return <DetailScreen setScreen={setCurrentScreen} drawing={selectedDrawing} />;
+      case 'community': 
+        return <CommunityScreen setScreen={setCurrentScreen} />;
+      default: 
+        return <HomeScreen setScreen={setCurrentScreen} onStart={handleStartGame} isStarting={false} />;
     }
   };
 
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center p-0 lg:p-6 font-sans text-gray-900 select-none">
-      {/* TỐI ƯU RESPONSIVE KHUNG IPAD:
-        - Mobile & iPad/Tablet (< 1024px): Chạy full màn hình (w-full h-[100dvh]) để tối đa diện tích trải nghiệm.
-        - Laptop/Desktop (>= 1024px): Hiển thị khung viền giả lập iPad tỉ lệ 4:3 siêu đẹp (lg:aspect-[4/3] max-w-5xl).
-      */}
       <div className="w-full h-[100dvh] lg:h-auto lg:aspect-[4/3] max-w-5xl bg-white lg:rounded-[3rem] lg:shadow-[12px_12px_0px_0px_rgba(31,41,55,1)] lg:border-[12px] border-gray-800 overflow-hidden relative flex flex-col">
         {renderScreen()}
       </div>
@@ -70,7 +118,7 @@ export default function DrawingGameApp() {
 }
 
 // --- SCREEN 1: HOME SCREEN ---
-function HomeScreen({ setScreen, onStart }: any) {
+function HomeScreen({ setScreen, onStart , isStarting }: any) {
   return (
     <div
       className="h-full w-full relative flex flex-col items-center justify-between py-10 px-4 lg:py-12 lg:px-8 bg-sky-200"
@@ -107,9 +155,10 @@ function HomeScreen({ setScreen, onStart }: any) {
       <div className="z-10 flex flex-col sm:flex-row gap-3 lg:gap-6 mb-6 lg:mb-8 mt-auto relative w-full sm:w-auto px-6 sm:px-0">
         <button
           onClick={onStart}
-          className="bg-cyan-300 hover:bg-cyan-200 text-lg sm:text-xl lg:text-3xl font-black py-3.5 px-6 lg:px-10 rounded-full border-4 border-gray-800 shadow-[5px_5px_0px_0px_rgba(31,41,55,1)] transition-transform active:translate-y-1 active:shadow-none flex items-center justify-center gap-2 w-full sm:w-auto"
+          disabled={isStarting} // Khóa nút khi đang tải
+          className={`${isStarting ? 'bg-gray-400' : 'bg-cyan-300 hover:bg-cyan-200 active:translate-y-1 active:shadow-none'} text-lg sm:text-xl lg:text-3xl font-black py-3.5 px-6 lg:px-10 rounded-full border-4 border-gray-800 shadow-[5px_5px_0px_0px_rgba(31,41,55,1)] transition-transform flex items-center justify-center gap-2 w-full sm:w-auto`}
         >
-          ✏️ Cùng Vẽ Nào!
+          {isStarting ? '⏳ Đang tải...' : '✏️ Cùng Vẽ Nào!'}
         </button>
 
         <button
@@ -127,15 +176,18 @@ function HomeScreen({ setScreen, onStart }: any) {
 function ReadyScreen({ setScreen, currentWord }: any) {
   return (
     <div className="h-full w-full bg-sky-300 flex items-center justify-center relative p-4">
-      <div className="bg-white px-6 py-8 sm:px-12 sm:py-10 lg:px-16 lg:py-12 rounded-3xl lg:rounded-[3rem] border-4 lg:border-8 border-gray-800 shadow-[6px_6px_0px_0px_rgba(31,41,55,1)] lg:shadow-[12px_12px_0px_0px_rgba(31,41,55,1)] flex flex-col items-center transform -rotate-1 w-full max-w-md text-center">
-        <h2 className="text-xl sm:text-2xl lg:text-4xl font-bold mb-3 lg:mb-6 text-gray-700">Từ khóa của bé là:</h2>
-        <h1 className="text-3xl sm:text-5xl lg:text-7xl font-black mb-6 lg:mb-12 text-blue-500 uppercase truncate w-full px-2"
+      <div className="bg-white px-6 py-8 sm:px-12 rounded-3xl border-4 lg:border-8 border-gray-800 shadow-[6px_6px_0px_0px_rgba(31,41,55,1)] flex flex-col items-center transform -rotate-1 w-full max-w-lg text-center">
+        <h2 className="text-xl sm:text-2xl lg:text-4xl font-bold mb-3 text-gray-700">Từ khóa của bé là:</h2>
+        
+        {/* BỎ TRUNCATE, THÊM BREAK-WORDS ĐỂ CHỮ XUỐNG DÒNG */}
+        <h1 className="text-3xl sm:text-5xl lg:text-7xl font-black mb-6 lg:mb-12 text-blue-500 uppercase break-words"
           style={{ WebkitTextStroke: '2px #1f2937', textShadow: '4px 4px 0px #1f2937' }}>
           {currentWord?.word}
         </h1>
+        
         <button
           onClick={() => setScreen('game')}
-          className="bg-yellow-400 text-gray-900 text-xl sm:text-2xl lg:text-4xl font-black py-3 px-8 sm:py-4 sm:px-12 lg:py-5 lg:px-16 rounded-full border-4 border-gray-800 shadow-[4px_4px_0px_0px_rgba(31,41,55,1)] lg:shadow-[8px_8px_0px_0px_rgba(31,41,55,1)] active:translate-y-1 active:shadow-none transition-all hover:bg-yellow-300 animate-bounce w-full sm:w-auto"
+          className="bg-yellow-400 text-gray-900 text-xl sm:text-2xl lg:text-4xl font-black py-3 px-8 rounded-full border-4 border-gray-800 shadow-[4px_4px_0px_0px_rgba(31,41,55,1)] hover:bg-yellow-300 animate-bounce"
         >
           SẴN SÀNG!
         </button>
@@ -374,7 +426,7 @@ function GameScreen({ setScreen, currentWord, onNextRound, hintsLeft, setHintsLe
 }
 
 // --- SCREEN 4: SUMMARY SCREEN ---
-function SummaryScreen({ setScreen, setSelectedDrawing }: any) {
+function SummaryScreen({ setScreen, setSelectedDrawing, gameDrawings }: any) {
   const [sharePopup, setSharePopup] = useState(false);
 
   const handleShare = (e: any) => {
@@ -396,7 +448,7 @@ function SummaryScreen({ setScreen, setSelectedDrawing }: any) {
 
       {/* Grid tự động chia 2 cột trên điện thoại và 3 cột từ tablet trở lên */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 lg:gap-6 flex-1 px-1 lg:px-4 pb-6">
-        {MOCK_DRAWINGS.map((item) => (
+        {gameDrawings.map((item: any) => (
           <div key={item.id} className="bg-white rounded-2xl lg:rounded-3xl border-4 border-gray-800 shadow-[3px_3px_0px_0px_rgba(31,41,55,1)] lg:shadow-[6px_6px_0px_0px_rgba(31,41,55,1)] p-2.5 lg:p-4 flex flex-col hover:-translate-y-0.5 transition-transform">
             <div
               className="flex-1 min-h-[90px] sm:min-h-[120px] lg:min-h-[140px] border-4 border-gray-200 rounded-xl lg:rounded-2xl flex items-center justify-center text-4xl sm:text-5xl lg:text-7xl cursor-pointer hover:bg-gray-50 transition-colors"
@@ -439,130 +491,190 @@ function SummaryScreen({ setScreen, setSelectedDrawing }: any) {
 
 // --- SCREEN 5: DETAIL SCREEN ---
 function DetailScreen({ setScreen, drawing }: any) {
-  const [isLiked, setIsLiked] = useState(false);
-  const [showShareMsg, setShowShareMsg] = useState(false);
-  const [showPhotobooth, setShowPhotobooth] = useState(false);
-  const [likedCommunityItems, setLikedCommunityItems] = useState<Record<number, boolean>>({});
+  const [relatedDrawings, setRelatedDrawings] = useState<any[]>([]);
 
-  if (!drawing) return null;
-
-  const handleShare = () => {
-    setShowPhotobooth(true);
-  };
-
-  const toggleCommunityLike = (e: any, id: number) => {
-    e.stopPropagation();
-    setLikedCommunityItems(prev => ({ ...prev, [id]: !prev[id] }));
-  };
+  useEffect(() => {
+    const fetchRelated = async () => {
+      if (!drawing?.label) return;
+      // Lấy các hình có cùng label, trừ hình hiện tại ra (dùng neq để loại trừ ID)
+      const { data } = await supabase
+        .from('quickdraw_library')
+        .select('*')
+        .eq('label', drawing.label)
+        .neq('id', drawing.id || 0) 
+        .limit(6);
+      if (data) setRelatedDrawings(data);
+    };
+    fetchRelated();
+  }, [drawing]);
 
   return (
     <div className="h-full w-full bg-cyan-100 p-3 sm:p-5 lg:p-8 flex flex-col relative overflow-y-auto">
+      {/* 1. NÚT BACK QUAY LẠI */}
       <div className="flex items-center mb-3 lg:mb-6 shrink-0 gap-4">
-        <button onClick={() => setScreen('summary')} className="w-9 h-9 lg:w-12 lg:h-12 bg-white border-4 border-gray-800 rounded-full font-bold shadow-[3px_3px_0px_0px_rgba(31,41,55,1)] flex items-center justify-center text-base lg:text-xl hover:bg-gray-100 active:translate-y-1 active:shadow-none transition-all shrink-0">⬅</button>
+        <button 
+          onClick={() => setScreen('summary')} 
+          className="w-9 h-9 lg:w-12 lg:h-12 bg-white border-4 border-gray-800 rounded-full font-bold shadow-[3px_3px_0px_0px_rgba(31,41,55,1)] flex items-center justify-center text-base lg:text-xl hover:bg-gray-100 active:translate-y-1 active:shadow-none transition-all shrink-0"
+        >
+          ⬅
+        </button>
         <h1 className="flex-1 text-center text-base sm:text-xl lg:text-3xl font-black uppercase text-gray-800 truncate">Chi tiết tác phẩm</h1>
         <div className="w-9 lg:w-12 shrink-0"></div>
       </div>
 
+      {/* KHUNG ẢNH CHÍNH */}
       <div className="flex-1 bg-white rounded-2xl lg:rounded-[3rem] border-4 border-gray-800 shadow-[4px_4px_0px_0px_rgba(31,41,55,1)] lg:shadow-[8px_8px_0px_0px_rgba(31,41,55,1)] p-4 lg:p-8 flex flex-col items-center justify-center relative mb-4 lg:mb-6 min-h-[200px]">
-        <div className="w-full flex flex-row justify-between items-center gap-2 mb-3 lg:mb-6 absolute top-4 px-4 lg:px-8">
-          <div className="flex items-center gap-1.5 lg:gap-3">
-            <div className="w-8 h-8 lg:w-12 lg:h-12 bg-orange-300 rounded-full border-4 border-gray-800 flex items-center justify-center text-base lg:text-2xl">😊</div>
-            <span className="font-bold text-sm lg:text-xl truncate max-w-[120px] sm:max-w-none">{drawing.word} của Bạn</span>
-          </div>
-          <div className="flex gap-2 relative">
-            <button
-              onClick={() => setIsLiked(!isLiked)}
-              className={`${isLiked ? 'bg-pink-400 text-white' : 'bg-sky-200'} font-bold px-2.5 py-1.5 lg:px-5 lg:py-2 text-xs lg:text-base rounded-full border-2 lg:border-4 border-gray-800 flex items-center gap-1.5 shadow-[2px_2px_0px_0px_rgba(31,41,55,1)] active:translate-y-0.5 transition-colors`}
-            >
-              {isLiked ? '❤️ Thích' : '🤍 Thích'}
-            </button>
-            <button
-              onClick={handleShare}
-              className="bg-green-300 hover:bg-green-400 font-bold px-2.5 py-1.5 lg:px-5 lg:py-2 text-xs lg:text-base rounded-full border-2 lg:border-4 border-gray-800 flex items-center gap-1.5 shadow-[2px_2px_0px_0px_rgba(31,41,55,1)] active:translate-y-0.5 transition-colors"
-            >
-              🔗 Gửi
-            </button>
-          </div>
-        </div>
-
-        <div className="text-[90px] sm:text-[140px] lg:text-[200px] hover:scale-105 transition-transform cursor-pointer mt-8">
-          {drawing.emoji}
+        <div className="w-full max-w-[300px] aspect-square lg:max-w-[500px] relative">
+          {drawing.drawingData && drawing.drawingData.length > 0 ? (
+            <MiniCanvas drawingData={drawing.drawingData} />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-[100px] lg:text-[200px]">{drawing.emoji}</div>
+          )}
         </div>
       </div>
 
-      {/* Slider ngang cho các bản vẽ khác dưới mobile */}
+      {/* 2. CÁC ẢNH KHÁC CÓ KHUNG (FRAME) NHƯ BÊN CỘNG ĐỒNG */}
       <div className="bg-white rounded-xl lg:rounded-[2rem] border-4 border-gray-800 shadow-[3px_3px_0px_0px_rgba(31,41,55,1)] lg:shadow-[6px_6px_0px_0px_rgba(31,41,55,1)] p-3 lg:p-4 shrink-0">
-        <h3 className="font-black text-center mb-2 uppercase text-gray-700 text-[11px] lg:text-base">Bản vẽ của các bạn khác</h3>
-        <div className="flex gap-3 overflow-x-auto pb-1.5">
-          {COMMUNITY_DRAWINGS.map(comm => (
-            <div key={comm.id} className="min-w-[85px] h-[85px] sm:min-w-[120px] sm:h-[120px] bg-sky-50 rounded-xl lg:rounded-2xl border-4 border-gray-800 flex flex-col items-center justify-center p-1.5 shadow-[2px_2px_0px_0px_rgba(31,41,55,1)] cursor-pointer hover:-translate-y-0.5 transition-transform relative">
-              <button
-                onClick={(e) => toggleCommunityLike(e, comm.id)}
-                className="absolute top-1 right-1 text-sm sm:text-xl z-10 active:scale-90 transition-transform"
+        <h3 className="font-black text-center mb-3 uppercase text-gray-700 text-[11px] lg:text-base">Bản vẽ của các bạn khác</h3>
+        {relatedDrawings.length === 0 ? (
+           <p className="text-center text-gray-400 font-bold text-sm">Chưa có ai vẽ hình này!</p>
+        ) : (
+          <div className="flex gap-4 overflow-x-auto pb-2 px-1">
+            {relatedDrawings.map(comm => (
+              <div 
+                key={comm.id} 
+                className="min-w-[85px] h-[85px] sm:min-w-[100px] sm:h-[100px] bg-white rounded-xl border-4 border-gray-800 shadow-[2px_2px_0px_0px_rgba(31,41,55,1)] p-1.5 flex items-center justify-center overflow-hidden"
               >
-                {likedCommunityItems[comm.id] ? '❤️' : '🤍'}
-              </button>
-              <span className="text-3xl sm:text-5xl mb-0.5 sm:mb-2">{comm.emoji}</span>
-              <span className="text-[9px] sm:text-xs font-bold text-center leading-tight truncate w-full px-1">{comm.word} - {comm.user}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Photobooth Popup Content */}
-      {showPhotobooth && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-white border-[6px] lg:border-[12px] border-yellow-300 rounded-2xl p-4 lg:p-6 shadow-[6px_6px_0px_0px_rgba(31,41,55,1)] lg:shadow-[12px_12px_0px_0px_rgba(31,41,55,1)] flex flex-col items-center max-w-xs w-full transform scale-100 transition-transform animate-bounce relative" style={{ animationIterationCount: 1 }}>
-
-            <div className="bg-sky-100 border-4 border-gray-800 rounded-xl w-full aspect-square flex flex-col items-center justify-center mb-4 overflow-hidden relative shadow-inner">
-              <div className="text-[90px] lg:text-[150px] transform hover:scale-105 transition-transform">
-                {drawing.emoji}
+                <div className="w-full h-full relative">
+                  <MiniCanvas drawingData={comm.drawing} />
+                </div>
               </div>
-              <span className="absolute top-2 left-2 text-xl lg:text-3xl">✨</span>
-              <span className="absolute bottom-2 right-2 text-xl lg:text-3xl">🎉</span>
-            </div>
-
-            <div className="text-center w-full">
-              <h3 className="text-xl lg:text-3xl font-black text-gray-800 uppercase mb-0.5" style={{ WebkitTextStroke: '1px white' }}>{drawing.word}</h3>
-              <p className="font-bold text-gray-500 mb-4 text-xs lg:text-lg">Tác phẩm của Bạn</p>
-            </div>
-
-            <div className="flex gap-2 w-full">
-              <button
-                onClick={() => {
-                  setShowShareMsg(true);
-                  setTimeout(() => setShowShareMsg(false), 2000);
-                }}
-                className="flex-1 bg-green-400 hover:bg-green-300 text-sm lg:text-lg font-black py-2 lg:py-3 rounded-full border-4 border-gray-800 shadow-[3px_3px_0px_0px_rgba(31,41,55,1)] active:translate-y-0.5 transition-all"
-              >
-                Tải Xuống 📥
-              </button>
-              <button
-                onClick={() => setShowPhotobooth(false)}
-                className="bg-red-400 text-white hover:bg-red-300 text-sm lg:text-lg font-black py-2 px-4 lg:py-3 lg:px-6 rounded-full border-4 border-gray-800 shadow-[3px_3px_0px_0px_rgba(31,41,55,1)] active:translate-y-0.5 transition-all"
-              >
-                Đóng
-              </button>
-            </div>
-
-            {showShareMsg && (
-              <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-white border-4 border-gray-800 rounded-xl px-3 py-1.5 font-bold shadow-[4px_4px_0px_0px_rgba(31,41,55,1)] animate-bounce text-green-600 z-10 text-xs sm:text-base whitespace-nowrap">
-                Đã tải xuống thành công! 🎉
-              </div>
-            )}
+            ))}
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
 
-// --- SCREEN 6: COMMUNITY SCREEN ---
-function CommunityScreen({ setScreen }: any) {
-  const [likedItems, setLikedItems] = useState<Record<number, boolean>>({});
+// --- COMPONENT VẼ LẠI HÌNH TỪ JSON (TỰ ĐỘNG CĂN GIỮA) ---
+function MiniCanvas({ drawingData }: { drawingData: any }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  const toggleLike = (idx: number) => {
-    setLikedItems(prev => ({ ...prev, [idx]: !prev[idx] }));
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas || !drawingData) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    // Lấy kích thước của khung thẻ HTML chứa nó
+    const width = canvas.parentElement?.clientWidth || 200;
+    const height = canvas.parentElement?.clientHeight || 200;
+    canvas.width = width;
+    canvas.height = height;
+
+    // Reset lại nền canvas
+    ctx.clearRect(0, 0, width, height);
+
+    ctx.strokeStyle = '#1f2937';
+    ctx.lineWidth = 4;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    let strokes = [];
+    try {
+      strokes = typeof drawingData === 'string' ? JSON.parse(drawingData) : drawingData;
+    } catch (e) {
+      return;
+    }
+
+    if (!strokes || strokes.length === 0) return;
+
+    // BƯỚC 1: TÌM HỘP GIỚI HẠN (BOUNDING BOX) CỦA BỨC VẼ
+    let minX = Infinity, maxX = -Infinity;
+    let minY = Infinity, maxY = -Infinity;
+
+    strokes.forEach((stroke: any) => {
+      const xCoords = stroke[0];
+      const yCoords = stroke[1];
+      xCoords.forEach((x: number) => { minX = Math.min(minX, x); maxX = Math.max(maxX, x); });
+      yCoords.forEach((y: number) => { minY = Math.min(minY, y); maxY = Math.max(maxY, y); });
+    });
+
+    // Kích thước thực tế của bức tranh
+    const drawWidth = maxX - minX;
+    const drawHeight = maxY - minY;
+
+    // BƯỚC 2: TÍNH TOÁN TỶ LỆ THU NHỎ & ĐỘ DỊCH CHUYỂN (Để căn giữa)
+    const padding = 15; // Lề an toàn để hình không chạm sát viền
+    const scaleX = (width - padding * 2) / (drawWidth || 1);
+    const scaleY = (height - padding * 2) / (drawHeight || 1);
+    const scale = Math.min(scaleX, scaleY); // Lấy tỷ lệ nhỏ nhất để không bị méo hình
+
+    // Tính toán tọa độ bù trừ để đẩy bức tranh ra chính giữa
+    const offsetX = (width - drawWidth * scale) / 2 - minX * scale;
+    const offsetY = (height - drawHeight * scale) / 2 - minY * scale;
+
+    // BƯỚC 3: TIẾN HÀNH VẼ
+    strokes.forEach((stroke: any) => {
+      const xCoords = stroke[0];
+      const yCoords = stroke[1];
+
+      if (xCoords.length > 0) {
+        ctx.beginPath();
+        // Áp dụng tỷ lệ và độ dịch chuyển vào từng điểm ảnh
+        ctx.moveTo(xCoords[0] * scale + offsetX, yCoords[0] * scale + offsetY);
+        for (let i = 1; i < xCoords.length; i++) {
+          ctx.lineTo(xCoords[i] * scale + offsetX, yCoords[i] * scale + offsetY);
+        }
+        ctx.stroke();
+      }
+    });
+  }, [drawingData]);
+
+  return <canvas ref={canvasRef} className="w-full h-full bg-transparent" />;
+}
+
+// --- SCREEN 6: COMMUNITY SCREEN (ĐÃ THÊM POPUP) ---
+function CommunityScreen({ setScreen }: any) {
+  const [communityDrawings, setCommunityDrawings] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  
+  // STATE MỚI: Dùng để lưu bức tranh đang được chọn để hiện Popup
+  const [selectedItem, setSelectedItem] = useState<any>(null);
+
+  useEffect(() => {
+    const fetchTopDrawings = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('quickdraw_library')
+          .select('*')
+          .gte('like_count', 1)
+          .order('like_count', { ascending: false })
+          .limit(20);
+
+        if (error) throw error;
+        if (data) setCommunityDrawings(data);
+      } catch (error) {
+        console.error("Lỗi khi tải dữ liệu cộng đồng:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTopDrawings();
+  }, []);
+
+  const handleLike = async (e: any, id: number, currentLikes: number) => {
+    e.stopPropagation(); // Ngăn sự kiện click tràn xuống khung hình bên dưới
+    setCommunityDrawings(prev => 
+      prev.map(item => item.id === id ? { ...item, like_count: currentLikes + 1 } : item)
+    );
+
+    await supabase
+      .from('quickdraw_library')
+      .update({ like_count: currentLikes + 1 })
+      .eq('id', id);
   };
 
   return (
@@ -573,28 +685,81 @@ function CommunityScreen({ setScreen }: any) {
         <div className="w-9 lg:w-12 shrink-0"></div>
       </div>
 
-      {/* Grid tự động chia: 2 cột trên Mobile nhỏ, 3 cột trên Mobile lớn, 4-5 cột trên Laptop */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 gap-3 lg:gap-6 pb-6 px-1 flex-1">
-        {[...COMMUNITY_DRAWINGS, ...COMMUNITY_DRAWINGS].map((item, idx) => (
-          <div key={idx} className="bg-white rounded-2xl lg:rounded-3xl border-4 border-gray-800 shadow-[3px_3px_0px_0px_rgba(31,41,55,1)] lg:shadow-[6px_6px_0px_0px_rgba(31,41,55,1)] p-2.5 lg:p-4 flex flex-col hover:-translate-y-0.5 transition-transform">
-            <div className="flex-1 h-20 sm:h-28 lg:h-32 border-4 border-gray-200 rounded-xl lg:rounded-2xl flex items-center justify-center text-4xl sm:text-5xl lg:text-6xl mb-2 bg-gray-50 cursor-pointer">
-              {item.emoji}
-            </div>
-            <div className="flex justify-between items-end gap-1">
-              <div className="leading-tight flex-1 min-w-0">
-                <span className="font-black text-[10px] sm:text-xs lg:text-sm text-gray-600 block truncate">{item.word}</span>
-                <span className="font-bold text-[10px] sm:text-xs lg:text-sm text-gray-900 block truncate">của {item.user}</span>
+      {loading ? (
+        <div className="flex-1 flex justify-center items-center text-2xl font-bold text-gray-500">Đang tải tranh...</div>
+      ) : communityDrawings.length === 0 ? (
+        <div className="flex-1 flex justify-center items-center text-xl font-bold text-gray-500">Chưa có bức tranh nào được thả tim!</div>
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 gap-3 lg:gap-6 pb-6 px-1 flex-1">
+          {communityDrawings.map((item) => (
+            <div 
+              key={item.id} 
+              // SỰ KIỆN CLICK: Mở Popup khi bấm vào khung ảnh
+              onClick={() => setSelectedItem(item)}
+              className="bg-white rounded-2xl lg:rounded-3xl border-4 border-gray-800 shadow-[3px_3px_0px_0px_rgba(31,41,55,1)] lg:shadow-[6px_6px_0px_0px_rgba(31,41,55,1)] p-2.5 lg:p-4 flex flex-col hover:-translate-y-0.5 transition-transform cursor-pointer"
+            >
+              <div className="flex-1 h-20 sm:h-28 lg:h-32 border-4 border-gray-200 rounded-xl lg:rounded-2xl flex items-center justify-center mb-2 bg-gray-50 overflow-hidden relative pointer-events-none">
+                <MiniCanvas drawingData={item.drawing} />
               </div>
-              <button
-                onClick={() => toggleLike(idx)}
-                className={`text-xl sm:text-2xl lg:text-3xl hover:scale-110 active:scale-90 transition-all shrink-0 ${likedItems[idx] ? 'text-red-500 drop-shadow-[0_1.5px_0_rgba(0,0,0,1)]' : 'grayscale opacity-40'}`}
-              >
-                ❤️
-              </button>
+
+              <div className="flex justify-between items-end gap-1">
+                <div className="leading-tight flex-1 min-w-0">
+                  <span className="font-black text-[10px] sm:text-xs lg:text-sm text-gray-600 block truncate">{item.word}</span>
+                  <span className="font-bold text-[10px] sm:text-xs lg:text-sm text-gray-400 block truncate">
+                    {new Date(item.created_at).toLocaleDateString('vi-VN')}
+                  </span>
+                </div>
+                <button
+                  onClick={(e) => handleLike(e, item.id, item.like_count)}
+                  className="text-sm sm:text-base lg:text-lg flex flex-col items-center hover:scale-110 active:scale-90 transition-all shrink-0 text-red-500 font-bold"
+                >
+                  ❤️
+                  <span className="text-[10px] lg:text-xs">{item.like_count}</span>
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* TÍNH NĂNG POPUP PHÓNG TO HÌNH ẢNH */}
+      {selectedItem && (
+        <div 
+          className="absolute inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
+          onClick={() => setSelectedItem(null)} // Click ra ngoài nền đen để đóng
+        >
+          <div 
+  className="bg-white border-[6px] border-gray-800 rounded-3xl p-4 lg:p-8 shadow-[8px_8px_0px_0px_rgba(31,41,55,1)] flex flex-col items-center max-w-sm w-full relative" 
+  onClick={(e) => e.stopPropagation()} 
+>
+            {/* Nút X đóng popup */}
+            <button 
+              onClick={() => setSelectedItem(null)}
+              className="absolute -top-4 -right-4 bg-red-400 text-white border-4 border-gray-800 rounded-full w-10 h-10 flex items-center justify-center font-black text-xl hover:bg-red-500 shadow-[2px_2px_0px_0px_rgba(31,41,55,1)] active:translate-y-1 active:shadow-none transition-all z-10"
+            >
+              X
+            </button>
+
+            <h2 className="text-2xl lg:text-3xl font-black text-gray-800 uppercase mb-4 text-center">
+              {selectedItem.word}
+            </h2>
+
+            {/* Sử dụng lại MiniCanvas nhưng ở kích thước lớn hơn */}
+            <div className="w-full aspect-square border-4 border-gray-200 rounded-2xl bg-gray-50 flex items-center justify-center overflow-hidden mb-4 relative">
+                <MiniCanvas drawingData={selectedItem.drawing} />
+            </div>
+
+            <div className="flex justify-between items-center w-full px-2">
+              <span className="font-bold text-gray-500 text-sm lg:text-base">
+                Ngày vẽ: {new Date(selectedItem.created_at).toLocaleDateString('vi-VN')}
+              </span>
+              <div className="flex items-center gap-1.5 text-red-500 font-black text-xl">
+                ❤️ {selectedItem.like_count}
+              </div>
             </div>
           </div>
-        ))}
-      </div>
+        </div>
+      )}
     </div>
   );
 }
