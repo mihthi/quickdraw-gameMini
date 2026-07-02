@@ -117,6 +117,7 @@ export default function DrawingGameApp() {
   );
 }
 
+
 // --- SCREEN 1: HOME SCREEN ---
 function HomeScreen({ setScreen, onStart, isStarting }: any) {
   return (
@@ -124,21 +125,21 @@ function HomeScreen({ setScreen, onStart, isStarting }: any) {
       className="h-full w-full relative flex flex-col items-center justify-between py-10 px-4 lg:py-12 lg:px-8 bg-sky-200"
       style={{
         backgroundImage: `url(${img1})`,
-        backgroundSize: '100% 100%', // Đảm bảo ảnh kéo giãn khít hoàn toàn viền khung ở mọi tỷ lệ màn hình
+        backgroundSize: '100% 100%',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat'
       }}
     >
       <div className="absolute inset-0 bg-white/10 pointer-events-none"></div>
 
-      {/* Tiêu đề tự động co giãn theo màn hình (text-3xl -> text-7xl) */}
+      {/* Tiêu đề tự động co giãn theo màn hình (ĐÃ SỬA LỖI FONT TRÊN MOBILE) */}
       <div className="z-10 mt-12 lg:mt-8 relative px-4 text-center transform scale-90 sm:scale-100 transition-transform">
-        <h1 className="text-3xl sm:text-5xl lg:text-7xl font-black text-white uppercase tracking-wider"
-          style={{ WebkitTextStroke: '3px #1f2937', textShadow: '4px 4px 0px #1f2937' }}>
+        <h1 className="text-4xl sm:text-5xl lg:text-7xl font-black text-white uppercase tracking-wider"
+          style={{ textShadow: '4px 4px 0px #1f2937, -2px -2px 0 #1f2937, 2px -2px 0 #1f2937, -2px 2px 0 #1f2937, 2px 2px 0 #1f2937' }}>
           Cuộc Phiêu Lưu
         </h1>
-        <h1 className="text-2xl sm:text-4xl lg:text-6xl font-black text-yellow-300 uppercase tracking-wider mt-2"
-          style={{ WebkitTextStroke: '3px #1f2937', textShadow: '4px 4px 0px #1f2937' }}>
+        <h1 className="text-3xl sm:text-4xl lg:text-6xl font-black text-yellow-300 uppercase tracking-wider mt-2 lg:mt-4"
+          style={{ textShadow: '4px 4px 0px #1f2937, -2px -2px 0 #1f2937, 2px -2px 0 #1f2937, -2px 2px 0 #1f2937, 2px 2px 0 #1f2937' }}>
           Vẽ Của Artie
         </h1>
       </div>
@@ -151,7 +152,7 @@ function HomeScreen({ setScreen, onStart, isStarting }: any) {
         🤖
       </div>
 
-      {/* Khu vực nút bấm: Dọc trên Điện thoại, Ngang trên Tablet/Laptop */}
+      {/* Khu vực nút bấm: Đã canh giữa và ép kích thước bằng nhau */}
       <div className="z-10 flex flex-col sm:flex-row justify-center gap-4 lg:gap-8 mb-8 lg:mb-12 mt-auto relative w-full px-6">
         <button
           onClick={onStart}
