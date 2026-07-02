@@ -180,8 +180,8 @@ function ReadyScreen({ setScreen, currentWord }: any) {
         <h2 className="text-xl sm:text-2xl lg:text-4xl font-bold mb-3 text-gray-700">Từ khóa của bé là:</h2>
 
         {/* BỎ TRUNCATE, THÊM BREAK-WORDS ĐỂ CHỮ XUỐNG DÒNG */}
-        <h1 className="text-3xl sm:text-5xl lg:text-7xl font-black mb-6 lg:mb-12 text-blue-500 uppercase break-words"
-          style={{ WebkitTextStroke: '2px #1f2937', textShadow: '4px 4px 0px #1f2937' }}>
+        <h1 className="text-4xl sm:text-5xl lg:text-7xl font-black mb-6 lg:mb-12 text-blue-500 uppercase break-words tracking-wide"
+          style={{ textShadow: '3px 3px 0px #1f2937, -1px -1px 0 #1f2937, 1px -1px 0 #1f2937, -1px 1px 0 #1f2937, 1px 1px 0 #1f2937' }}>
           {currentWord?.word}
         </h1>
 
@@ -442,22 +442,24 @@ function SummaryScreen({ setScreen, setSelectedDrawing, gameDrawings }: any) {
         <div className="w-9 lg:w-12 shrink-0"></div>
       </div>
 
-      <h2 className="text-xl sm:text-3xl lg:text-5xl font-black text-center mb-4 lg:mb-8 text-white uppercase drop-shadow-[3px_3px_0px_rgba(31,41,55,1)]" style={{ WebkitTextStroke: '1.5px #1f2937' }}>
+      {/* ĐÃ SỬA LỖI FONT CHỮ: Thay WebkitTextStroke bằng textShadow */}
+      <h2 className="text-2xl sm:text-3xl lg:text-5xl font-black text-center mb-4 lg:mb-8 text-white uppercase tracking-wider" 
+          style={{ textShadow: '2px 2px 0px #1f2937, -1.5px -1.5px 0 #1f2937, 1.5px -1.5px 0 #1f2937, -1.5px 1.5px 0 #1f2937, 1.5px 1.5px 0 #1f2937' }}>
         Nghệ sĩ tuyệt vời!
       </h2>
 
-      {/* Grid tự động chia 2 cột trên điện thoại và 3 cột từ tablet trở lên */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 lg:gap-6 flex-1 px-1 lg:px-4 pb-6">
+      {/* ĐÃ THÊM auto-rows-max VÀO GRID */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 lg:gap-6 flex-1 px-1 lg:px-4 pb-6 auto-rows-max">
         {gameDrawings.map((item: any) => (
           <div key={item.id} className="bg-white rounded-2xl lg:rounded-3xl border-4 border-gray-800 shadow-[3px_3px_0px_0px_rgba(31,41,55,1)] lg:shadow-[6px_6px_0px_0px_rgba(31,41,55,1)] p-2.5 lg:p-4 flex flex-col hover:-translate-y-0.5 transition-transform">
 
-            {/* THAY ĐỔI: Khung hiển thị MiniCanvas hoặc Emoji */}
+            {/* ĐÃ SỬA KÍCH THƯỚC Ô BẰNG NHAU: Thay flex-1 min-h-... bằng w-full aspect-square */}
             <div
-              className="flex-1 min-h-[90px] sm:min-h-[120px] lg:min-h-[140px] border-4 border-gray-200 rounded-xl lg:rounded-2xl flex items-center justify-center text-4xl sm:text-5xl lg:text-7xl cursor-pointer hover:bg-gray-50 transition-colors relative overflow-hidden"
+              className="w-full aspect-square border-4 border-gray-200 rounded-xl lg:rounded-2xl flex items-center justify-center text-4xl sm:text-5xl lg:text-7xl cursor-pointer hover:bg-gray-50 transition-colors relative overflow-hidden"
               onClick={() => { setSelectedDrawing(item); setScreen('detail'); }}
             >
               {item.drawingData && item.drawingData.length > 0 ? (
-                <div className="w-full h-full pointer-events-none p-2">
+                <div className="w-full h-full pointer-events-none p-1 sm:p-2">
                   <MiniCanvas drawingData={item.drawingData} />
                 </div>
               ) : (
