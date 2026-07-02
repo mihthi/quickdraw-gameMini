@@ -38,13 +38,13 @@ export default function DrawingGameApp() {
     try {
       // Thay 'game_words' bằng tên bảng chứa 20 từ khóa thực tế của bạn trên Supabase
       const { data, error } = await supabase.from('game_words').select('*');
-      
+
       if (error) throw error;
 
       if (data && data.length > 0) {
         // Thuật toán Fisher-Yates (Hoặc sort ngẫu nhiên) để xáo trộn 20 từ khóa
         const shuffledWords = [...data].sort(() => 0.5 - Math.random());
-        
+
         // Lấy đúng 3 từ đầu tiên
         const random3Words = shuffledWords.slice(0, 3).map((dbWord, index) => ({
           id: index + 1,       // Tạo ID ảo cho lượt chơi này
@@ -89,21 +89,21 @@ export default function DrawingGameApp() {
 
   const renderScreen = () => {
     switch (currentScreen) {
-      case 'home': 
+      case 'home':
         // Truyền thêm prop isStarting để làm hiệu ứng loading cho nút bấm
         return <HomeScreen setScreen={setCurrentScreen} onStart={handleStartGame} isStarting={isStarting} />;
-      case 'ready': 
+      case 'ready':
         return <ReadyScreen setScreen={setCurrentScreen} currentWord={currentWordObj} />;
-      case 'game': 
+      case 'game':
         return <GameScreen setScreen={setCurrentScreen} currentWord={currentWordObj} onNextRound={handleNextRound} hintsLeft={hintsLeft} setHintsLeft={setHintsLeft} />;
-      case 'summary': 
+      case 'summary':
         // Truyền mảng 3 từ khóa vào màn hình tổng kết để nó biết phải in ra cái gì
         return <SummaryScreen setScreen={setCurrentScreen} setSelectedDrawing={setSelectedDrawing} gameDrawings={gameDrawings} />;
-      case 'detail': 
+      case 'detail':
         return <DetailScreen setScreen={setCurrentScreen} drawing={selectedDrawing} />;
-      case 'community': 
+      case 'community':
         return <CommunityScreen setScreen={setCurrentScreen} />;
-      default: 
+      default:
         return <HomeScreen setScreen={setCurrentScreen} onStart={handleStartGame} isStarting={false} />;
     }
   };
@@ -118,7 +118,7 @@ export default function DrawingGameApp() {
 }
 
 // --- SCREEN 1: HOME SCREEN ---
-function HomeScreen({ setScreen, onStart , isStarting }: any) {
+function HomeScreen({ setScreen, onStart, isStarting }: any) {
   return (
     <div
       className="h-full w-full relative flex flex-col items-center justify-between py-10 px-4 lg:py-12 lg:px-8 bg-sky-200"
@@ -152,18 +152,18 @@ function HomeScreen({ setScreen, onStart , isStarting }: any) {
       </div>
 
       {/* Khu vực nút bấm: Dọc trên Điện thoại, Ngang trên Tablet/Laptop */}
-      <div className="z-10 flex flex-col sm:flex-row gap-3 lg:gap-6 mb-6 lg:mb-8 mt-auto relative w-full sm:w-auto px-6 sm:px-0">
+      <div className="z-10 flex flex-col sm:flex-row justify-center gap-4 lg:gap-8 mb-8 lg:mb-12 mt-auto relative w-full px-6">
         <button
           onClick={onStart}
-          disabled={isStarting} // Khóa nút khi đang tải
-          className={`${isStarting ? 'bg-gray-400' : 'bg-cyan-300 hover:bg-cyan-200 active:translate-y-1 active:shadow-none'} text-lg sm:text-xl lg:text-3xl font-black py-3.5 px-6 lg:px-10 rounded-full border-4 border-gray-800 shadow-[5px_5px_0px_0px_rgba(31,41,55,1)] transition-transform flex items-center justify-center gap-2 w-full sm:w-auto`}
+          disabled={isStarting}
+          className={`${isStarting ? 'bg-gray-400' : 'bg-cyan-300 hover:bg-cyan-200'} text-lg sm:text-xl lg:text-3xl font-black py-3.5 px-4 rounded-full border-4 border-gray-800 shadow-[5px_5px_0px_0px_rgba(31,41,55,1)] transition-transform active:translate-y-1 active:shadow-none flex items-center justify-center gap-2 w-full sm:w-[220px] lg:w-[320px] shrink-0`}
         >
           {isStarting ? '⏳ Đang tải...' : '✏️ Cùng Vẽ Nào!'}
         </button>
 
         <button
           onClick={() => setScreen('community')}
-          className="bg-yellow-400 hover:bg-yellow-300 text-base sm:text-lg lg:text-2xl font-black py-3.5 px-6 lg:px-8 rounded-full border-4 border-gray-800 shadow-[5px_5px_0px_0px_rgba(31,41,55,1)] transition-transform active:translate-y-1 active:shadow-none flex items-center justify-center gap-2 w-full sm:w-auto"
+          className="bg-yellow-400 hover:bg-yellow-300 text-base sm:text-xl lg:text-3xl font-black py-3.5 px-4 rounded-full border-4 border-gray-800 shadow-[5px_5px_0px_0px_rgba(31,41,55,1)] transition-transform active:translate-y-1 active:shadow-none flex items-center justify-center gap-2 w-full sm:w-[220px] lg:w-[320px] shrink-0"
         >
           🌍 Cộng Đồng
         </button>
@@ -178,13 +178,13 @@ function ReadyScreen({ setScreen, currentWord }: any) {
     <div className="h-full w-full bg-sky-300 flex items-center justify-center relative p-4">
       <div className="bg-white px-6 py-8 sm:px-12 rounded-3xl border-4 lg:border-8 border-gray-800 shadow-[6px_6px_0px_0px_rgba(31,41,55,1)] flex flex-col items-center transform -rotate-1 w-full max-w-lg text-center">
         <h2 className="text-xl sm:text-2xl lg:text-4xl font-bold mb-3 text-gray-700">Từ khóa của bé là:</h2>
-        
+
         {/* BỎ TRUNCATE, THÊM BREAK-WORDS ĐỂ CHỮ XUỐNG DÒNG */}
         <h1 className="text-3xl sm:text-5xl lg:text-7xl font-black mb-6 lg:mb-12 text-blue-500 uppercase break-words"
           style={{ WebkitTextStroke: '2px #1f2937', textShadow: '4px 4px 0px #1f2937' }}>
           {currentWord?.word}
         </h1>
-        
+
         <button
           onClick={() => setScreen('game')}
           className="bg-yellow-400 text-gray-900 text-xl sm:text-2xl lg:text-4xl font-black py-3 px-8 rounded-full border-4 border-gray-800 shadow-[4px_4px_0px_0px_rgba(31,41,55,1)] hover:bg-yellow-300 animate-bounce"
@@ -200,25 +200,22 @@ function ReadyScreen({ setScreen, currentWord }: any) {
 // --- SCREEN 3: GAMEPLAY SCREEN ---
 function GameScreen({ setScreen, currentWord, onNextRound, hintsLeft, setHintsLeft }: any) {
   const [aiGuess, setAiGuess] = useState("AI đang xem bé vẽ...");
-
-  // CẬP NHẬT: Thay đổi showHint thành hintStatus với 3 trạng thái
   const [hintStatus, setHintStatus] = useState<'IDLE' | 'SHOWING' | 'HIDING'>('IDLE');
-
   const [timeLeft, setTimeLeft] = useState(20);
-
-  // THÊM MỚI: State lưu công cụ đang sử dụng (Mặc định là Cọ)
   const [activeTool, setActiveTool] = useState<'brush' | 'eraser'>('brush');
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
 
+  // THÊM MỚI: State lưu tọa độ vẽ
+  const [strokes, setStrokes] = useState<any[]>([]);
+  const [currentPath, setCurrentPath] = useState<{ x: number[], y: number[] }>({ x: [], y: [] });
+
   const handleShowHint = () => {
     if (hintsLeft > 0 && hintStatus === 'IDLE') {
       setHintsLeft((prev: number) => prev - 1);
-      setHintStatus('SHOWING'); // Bật popup lên
-
+      setHintStatus('SHOWING');
       setTimeout(() => setHintStatus('HIDING'), 3000);
-
       setTimeout(() => setHintStatus('IDLE'), 3500);
     }
   };
@@ -231,11 +228,12 @@ function GameScreen({ setScreen, currentWord, onNextRound, hintsLeft, setHintsLe
     return () => clearInterval(timer);
   }, [currentWord]);
 
+  // CẬP NHẬT: Gửi mảng tọa độ lên App.tsx khi hết giờ
   useEffect(() => {
     if (timeLeft === 0) {
-      onNextRound();
+      onNextRound(strokes);
     }
-  }, [timeLeft, onNextRound]);
+  }, [timeLeft, onNextRound, strokes]);
 
   useEffect(() => {
     const guesses = ["Hình như là đường thẳng...", "Có phải là hình tròn?", `Đó là ${currentWord?.word?.toUpperCase()}!`];
@@ -250,7 +248,6 @@ function GameScreen({ setScreen, currentWord, onNextRound, hintsLeft, setHintsLe
     return () => clearInterval(interval);
   }, [currentWord]);
 
-  // TỐI ƯU CANVAS: Lắng nghe sự kiện đổi kích thước cửa sổ/xoay màn hình
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -262,20 +259,22 @@ function GameScreen({ setScreen, currentWord, onNextRound, hintsLeft, setHintsLe
       }
     };
 
-    updateCanvasSize(); // Chạy ngay lần đầu tiên
+    updateCanvasSize();
     window.addEventListener('resize', updateCanvasSize);
     return () => window.removeEventListener('resize', updateCanvasSize);
   }, [currentWord]);
 
-  // THÊM MỚI: Hàm xóa toàn bộ canvas
+  // CẬP NHẬT: Xóa toàn bộ canvas và dữ liệu nét vẽ
   const handleClearCanvas = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    setStrokes([]);
   };
 
+  // CẬP NHẬT: 3 hàm vẽ để lưu tọa độ
   const startDrawing = (e: any) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -289,6 +288,7 @@ function GameScreen({ setScreen, currentWord, onNextRound, hintsLeft, setHintsLe
     ctx.beginPath();
     ctx.moveTo(x, y);
     setIsDrawing(true);
+    setCurrentPath({ x: [x], y: [y] });
   };
 
   const draw = (e: any) => {
@@ -304,14 +304,17 @@ function GameScreen({ setScreen, currentWord, onNextRound, hintsLeft, setHintsLe
 
     ctx.lineTo(x, y);
 
-    // CẬP NHẬT: Xử lý công cụ Cọ và Tẩy
     if (activeTool === 'eraser') {
       ctx.globalCompositeOperation = 'destination-out';
-      ctx.lineWidth = 20; // Nét tẩy to hơn
+      ctx.lineWidth = 20;
     } else {
       ctx.globalCompositeOperation = 'source-over';
       ctx.strokeStyle = '#1f2937';
       ctx.lineWidth = 6;
+      setCurrentPath(prev => ({
+        x: [...prev.x, x],
+        y: [...prev.y, y]
+      }));
     }
 
     ctx.lineCap = 'round';
@@ -320,6 +323,9 @@ function GameScreen({ setScreen, currentWord, onNextRound, hintsLeft, setHintsLe
   };
 
   const stopDrawing = () => {
+    if (isDrawing && currentPath.x.length > 0) {
+      setStrokes(prev => [...prev, [currentPath.x, currentPath.y]]);
+    }
     setIsDrawing(false);
   };
 
@@ -339,7 +345,6 @@ function GameScreen({ setScreen, currentWord, onNextRound, hintsLeft, setHintsLe
           </div>
           <button
             onClick={handleShowHint}
-            // Chỉ được bấm khi còn số lần trợ giúp và nút đang rảnh (IDLE)
             disabled={hintsLeft === 0 || hintStatus !== 'IDLE'}
             className={`${hintsLeft === 0 || hintStatus !== 'IDLE' ? 'bg-gray-400 opacity-80' : 'bg-yellow-400 hover:bg-yellow-300 active:translate-y-1'} text-xs sm:text-sm lg:text-xl font-black py-1.5 sm:py-2 lg:py-3 px-2.5 sm:px-4 lg:px-6 rounded-full border-4 border-gray-800 shadow-[3px_3px_0px_0px_rgba(31,41,55,1)] active:shadow-none flex items-center gap-1 transition-all`}
           >
@@ -351,7 +356,6 @@ function GameScreen({ setScreen, currentWord, onNextRound, hintsLeft, setHintsLe
       {/* Khung vẽ */}
       <div className="flex-1 bg-white rounded-xl lg:rounded-[2rem] border-4 border-gray-800 shadow-[4px_4px_0px_0px_rgba(31,41,55,1)] lg:shadow-[8px_8px_0px_0px_rgba(31,41,55,1)] relative flex flex-col items-center justify-center overflow-hidden touch-none">
 
-        {/* CẬP NHẬT: Thêm logic đổi con trỏ chuột khi dùng tẩy vào class của canvas */}
         <canvas
           ref={canvasRef}
           onMouseDown={startDrawing}
@@ -364,7 +368,6 @@ function GameScreen({ setScreen, currentWord, onNextRound, hintsLeft, setHintsLe
           className={`absolute inset-0 w-full h-full ${activeTool === 'eraser' ? 'cursor-cell' : 'cursor-crosshair'}`}
         />
 
-        {/* THÊM MỚI: BỘ CÔNG CỤ CỌ & TẨY Ở GÓC TRÊN TRÁI */}
         <div className="absolute top-3 left-3 lg:top-6 lg:left-6 flex flex-col gap-2 lg:gap-3 z-10">
           <button
             onClick={() => setActiveTool('brush')}
@@ -384,7 +387,6 @@ function GameScreen({ setScreen, currentWord, onNextRound, hintsLeft, setHintsLe
           </button>
         </div>
 
-        {/* THÊM MỚI: NÚT XÓA Ở GÓC DƯỚI PHẢI */}
         <button
           onClick={handleClearCanvas}
           className="absolute bottom-3 right-3 lg:bottom-6 lg:right-6 w-10 h-10 lg:w-14 lg:h-14 bg-red-400 hover:bg-red-300 text-white rounded-full border-4 border-gray-800 shadow-[3px_3px_0px_0px_rgba(31,41,55,1)] flex items-center justify-center text-lg lg:text-2xl active:translate-y-1 active:shadow-none transition-all z-10"
@@ -393,16 +395,15 @@ function GameScreen({ setScreen, currentWord, onNextRound, hintsLeft, setHintsLe
           🗑️
         </button>
 
-        {/* CẬP NHẬT: Popup Hint với hiệu ứng trượt và mờ dần */}
         {hintStatus !== 'IDLE' && (
           <div
             className={`absolute top-3 right-3 z-20 transition-all duration-500 ease-in-out ${hintStatus === 'SHOWING'
-                ? 'opacity-100 translate-y-0'
-                : 'opacity-0 -translate-y-12 pointer-events-none'
+              ? 'opacity-100 translate-y-0'
+              : 'opacity-0 -translate-y-12 pointer-events-none'
               }`}
           >
             <div className="bg-white border-4 border-gray-800 rounded-xl p-3 lg:p-6 shadow-[4px_4px_0px_0px_rgba(31,41,55,1)] flex flex-col items-center animate-float">
-              {/* CHỖ NÀY LÀ NƠI BẠN SẼ THAY THẾ BẰNG ẢNH THỰC TẾ */}
+              {/* @ts-ignore */}
               <img
                 src={REAL_IMAGES[currentWord?.word]}
                 alt={currentWord?.word}
@@ -414,7 +415,6 @@ function GameScreen({ setScreen, currentWord, onNextRound, hintsLeft, setHintsLe
         )}
       </div>
 
-      {/* Bong bóng chat AI */}
       <div className="flex justify-center items-end gap-2 lg:gap-6 mt-3 lg:mt-6 h-14 sm:h-18 lg:h-24 shrink-0">
         <div className="text-3xl sm:text-5xl lg:text-7xl animate-pulse pb-1">🤖</div>
         <div className="bg-blue-500 text-white font-bold text-xs sm:text-lg lg:text-2xl px-4 lg:px-8 py-2 lg:py-4 rounded-2xl rounded-tl-none border-4 border-gray-800 shadow-[3px_3px_0px_0px_rgba(31,41,55,1)] lg:shadow-[6px_6px_0px_0px_rgba(31,41,55,1)] mb-1 w-full max-w-xs sm:max-w-sm text-center truncate">
@@ -450,12 +450,21 @@ function SummaryScreen({ setScreen, setSelectedDrawing, gameDrawings }: any) {
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 lg:gap-6 flex-1 px-1 lg:px-4 pb-6">
         {gameDrawings.map((item: any) => (
           <div key={item.id} className="bg-white rounded-2xl lg:rounded-3xl border-4 border-gray-800 shadow-[3px_3px_0px_0px_rgba(31,41,55,1)] lg:shadow-[6px_6px_0px_0px_rgba(31,41,55,1)] p-2.5 lg:p-4 flex flex-col hover:-translate-y-0.5 transition-transform">
+
+            {/* THAY ĐỔI: Khung hiển thị MiniCanvas hoặc Emoji */}
             <div
-              className="flex-1 min-h-[90px] sm:min-h-[120px] lg:min-h-[140px] border-4 border-gray-200 rounded-xl lg:rounded-2xl flex items-center justify-center text-4xl sm:text-5xl lg:text-7xl cursor-pointer hover:bg-gray-50 transition-colors"
+              className="flex-1 min-h-[90px] sm:min-h-[120px] lg:min-h-[140px] border-4 border-gray-200 rounded-xl lg:rounded-2xl flex items-center justify-center text-4xl sm:text-5xl lg:text-7xl cursor-pointer hover:bg-gray-50 transition-colors relative overflow-hidden"
               onClick={() => { setSelectedDrawing(item); setScreen('detail'); }}
             >
-              {item.emoji}
+              {item.drawingData && item.drawingData.length > 0 ? (
+                <div className="w-full h-full pointer-events-none p-2">
+                  <MiniCanvas drawingData={item.drawingData} />
+                </div>
+              ) : (
+                item.emoji
+              )}
             </div>
+
             <div className="mt-2 text-center">
               <span className="font-bold text-xs sm:text-sm lg:text-lg truncate block">{item.word} của bạn</span>
               <button
@@ -493,27 +502,57 @@ function SummaryScreen({ setScreen, setSelectedDrawing, gameDrawings }: any) {
 function DetailScreen({ setScreen, drawing }: any) {
   const [relatedDrawings, setRelatedDrawings] = useState<any[]>([]);
 
+  // 1. STATE THẢ TIM: Trí nhớ lưu trữ các ảnh đã thả tim (Đồng bộ với Cộng đồng)
+  const [likedItems, setLikedItems] = useState<Record<number, boolean>>({});
+
   useEffect(() => {
+    // Đọc trí nhớ từ trình duyệt ngay khi mở trang
+    const savedLikes = JSON.parse(localStorage.getItem('artie_liked_drawings') || '{}');
+    setLikedItems(savedLikes);
+
     const fetchRelated = async () => {
       if (!drawing?.label) return;
-      // Lấy các hình có cùng label, trừ hình hiện tại ra (dùng neq để loại trừ ID)
       const { data } = await supabase
         .from('quickdraw_library')
         .select('*')
         .eq('label', drawing.label)
-        .neq('id', drawing.id || 0) 
+        .neq('id', drawing.id || 0)
         .limit(6);
       if (data) setRelatedDrawings(data);
     };
     fetchRelated();
   }, [drawing]);
 
+  // 2. HÀM XỬ LÝ THẢ TIM
+  const handleLike = async (e: any, id: number, currentLikes: number) => {
+    e.stopPropagation();
+
+    const isCurrentlyLiked = likedItems[id];
+    const newLikeCount = isCurrentlyLiked ? Math.max(0, currentLikes - 1) : currentLikes + 1;
+
+    // Cập nhật giao diện lập tức
+    setRelatedDrawings(prev =>
+      prev.map(item => item.id === id ? { ...item, like_count: newLikeCount } : item)
+    );
+
+    // Cập nhật Local Storage
+    const updatedLikes = { ...likedItems, [id]: !isCurrentlyLiked };
+    setLikedItems(updatedLikes);
+    localStorage.setItem('artie_liked_drawings', JSON.stringify(updatedLikes));
+
+    // Cập nhật Supabase
+    await supabase
+      .from('quickdraw_library')
+      .update({ like_count: newLikeCount })
+      .eq('id', id);
+  };
+
   return (
     <div className="h-full w-full bg-cyan-100 p-3 sm:p-5 lg:p-8 flex flex-col relative overflow-y-auto">
-      {/* 1. NÚT BACK QUAY LẠI */}
+      {/* HEADER & NÚT BACK */}
       <div className="flex items-center mb-3 lg:mb-6 shrink-0 gap-4">
-        <button 
-          onClick={() => setScreen('summary')} 
+        <button
+          onClick={() => setScreen('summary')}
           className="w-9 h-9 lg:w-12 lg:h-12 bg-white border-4 border-gray-800 rounded-full font-bold shadow-[3px_3px_0px_0px_rgba(31,41,55,1)] flex items-center justify-center text-base lg:text-xl hover:bg-gray-100 active:translate-y-1 active:shadow-none transition-all shrink-0"
         >
           ⬅
@@ -522,9 +561,9 @@ function DetailScreen({ setScreen, drawing }: any) {
         <div className="w-9 lg:w-12 shrink-0"></div>
       </div>
 
-      {/* KHUNG ẢNH CHÍNH */}
+      {/* KHUNG ẢNH CHÍNH (CỦA NGƯỜI CHƠI) */}
       <div className="flex-1 bg-white rounded-2xl lg:rounded-[3rem] border-4 border-gray-800 shadow-[4px_4px_0px_0px_rgba(31,41,55,1)] lg:shadow-[8px_8px_0px_0px_rgba(31,41,55,1)] p-4 lg:p-8 flex flex-col items-center justify-center relative mb-4 lg:mb-6 min-h-[200px]">
-        <div className="w-full max-w-[300px] aspect-square lg:max-w-[500px] relative">
+        <div className="w-full max-w-[300px] aspect-square lg:max-w-[500px] relative pointer-events-none">
           {drawing.drawingData && drawing.drawingData.length > 0 ? (
             <MiniCanvas drawingData={drawing.drawingData} />
           ) : (
@@ -533,19 +572,30 @@ function DetailScreen({ setScreen, drawing }: any) {
         </div>
       </div>
 
-      {/* 2. CÁC ẢNH KHÁC CÓ KHUNG (FRAME) NHƯ BÊN CỘNG ĐỒNG */}
+      {/* BẢN VẼ CỦA CÁC BẠN KHÁC */}
       <div className="bg-white rounded-xl lg:rounded-[2rem] border-4 border-gray-800 shadow-[3px_3px_0px_0px_rgba(31,41,55,1)] lg:shadow-[6px_6px_0px_0px_rgba(31,41,55,1)] p-3 lg:p-4 shrink-0">
         <h3 className="font-black text-center mb-3 uppercase text-gray-700 text-[11px] lg:text-base">Bản vẽ của các bạn khác</h3>
+
         {relatedDrawings.length === 0 ? (
-           <p className="text-center text-gray-400 font-bold text-sm">Chưa có ai vẽ hình này!</p>
+          <p className="text-center text-gray-400 font-bold text-sm mb-2">Chưa có ai vẽ hình này!</p>
         ) : (
-          <div className="flex gap-4 overflow-x-auto pb-2 px-1">
+          <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-2 px-1">
             {relatedDrawings.map(comm => (
-              <div 
-                key={comm.id} 
-                className="min-w-[85px] h-[85px] sm:min-w-[100px] sm:h-[100px] bg-white rounded-xl border-4 border-gray-800 shadow-[2px_2px_0px_0px_rgba(31,41,55,1)] p-1.5 flex items-center justify-center overflow-hidden"
+              <div
+                key={comm.id}
+                // CHỈNH SỬA CSS TẠI ĐÂY: Thêm shrink-0 và chốt cứng kích thước
+                className="relative shrink-0 w-[90px] h-[90px] sm:w-[120px] sm:h-[120px] bg-white rounded-xl border-4 border-gray-800 shadow-[2px_2px_0px_0px_rgba(31,41,55,1)] p-1.5 flex flex-col items-center overflow-hidden"
               >
-                <div className="w-full h-full relative">
+                {/* NÚT THẢ TIM (Góc trên phải) */}
+                <button
+                  onClick={(e) => handleLike(e, comm.id, comm.like_count || 0)}
+                  className={`absolute top-1 right-1 sm:top-1.5 sm:right-1.5 z-10 text-sm sm:text-base hover:scale-110 active:scale-90 transition-transform ${likedItems[comm.id] ? 'text-red-500' : 'text-gray-300 hover:text-red-300'}`}
+                >
+                  {likedItems[comm.id] ? '❤️' : '🤍'}
+                </button>
+
+                {/* KHUNG VẼ (Dịch xuống một chút để không đè lên nút tim) */}
+                <div className="w-full h-full relative mt-2 sm:mt-3 pointer-events-none">
                   <MiniCanvas drawingData={comm.drawing} />
                 </div>
               </div>
@@ -635,15 +685,17 @@ function MiniCanvas({ drawingData }: { drawingData: any }) {
   return <canvas ref={canvasRef} className="w-full h-full bg-transparent" />;
 }
 
-// --- SCREEN 6: COMMUNITY SCREEN (ĐÃ THÊM POPUP) ---
+// --- SCREEN 6: COMMUNITY SCREEN (ĐÃ TÍCH HỢP THẢ TIM BẰNG LOCAL STORAGE) ---
 function CommunityScreen({ setScreen }: any) {
   const [communityDrawings, setCommunityDrawings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  
-  // STATE MỚI: Dùng để lưu bức tranh đang được chọn để hiện Popup
   const [selectedItem, setSelectedItem] = useState<any>(null);
+  const [likedItems, setLikedItems] = useState<Record<number, boolean>>({});
 
   useEffect(() => {
+    const savedLikes = JSON.parse(localStorage.getItem('artie_liked_drawings') || '{}');
+    setLikedItems(savedLikes);
+
     const fetchTopDrawings = async () => {
       try {
         const { data, error } = await supabase
@@ -666,74 +718,88 @@ function CommunityScreen({ setScreen }: any) {
   }, []);
 
   const handleLike = async (e: any, id: number, currentLikes: number) => {
-    e.stopPropagation(); // Ngăn sự kiện click tràn xuống khung hình bên dưới
-    setCommunityDrawings(prev => 
-      prev.map(item => item.id === id ? { ...item, like_count: currentLikes + 1 } : item)
+    e.stopPropagation();
+    const isCurrentlyLiked = likedItems[id];
+    const newLikeCount = isCurrentlyLiked ? Math.max(0, currentLikes - 1) : currentLikes + 1;
+
+    setCommunityDrawings(prev =>
+      prev.map(item => item.id === id ? { ...item, like_count: newLikeCount } : item)
     );
+
+    const updatedLikes = { ...likedItems, [id]: !isCurrentlyLiked };
+    setLikedItems(updatedLikes);
+    localStorage.setItem('artie_liked_drawings', JSON.stringify(updatedLikes));
 
     await supabase
       .from('quickdraw_library')
-      .update({ like_count: currentLikes + 1 })
+      .update({ like_count: newLikeCount })
       .eq('id', id);
   };
 
   return (
-    <div className="h-full w-full bg-sky-100 p-3 sm:p-5 lg:p-8 flex flex-col relative overflow-y-auto">
+    // SỬA Ở ĐÂY: Đổi overflow-y-auto thành overflow-hidden để khóa cuộn toàn trang
+    <div className="h-full w-full bg-sky-100 p-3 sm:p-5 lg:p-8 flex flex-col relative overflow-hidden">
+
+      {/* HEADER */}
       <div className="flex items-center mb-4 lg:mb-8 shrink-0 gap-4">
         <button onClick={() => setScreen('home')} className="w-9 h-9 lg:w-12 lg:h-12 bg-white border-4 border-gray-800 rounded-full font-bold shadow-[3px_3px_0px_0px_rgba(31,41,55,1)] flex items-center justify-center text-base lg:text-xl hover:bg-gray-100 active:translate-y-1 active:shadow-none transition-all shrink-0">⬅</button>
         <h1 className="flex-1 text-center text-lg sm:text-2xl lg:text-4xl font-black uppercase text-gray-800 truncate">Cộng đồng Artie</h1>
         <div className="w-9 lg:w-12 shrink-0"></div>
       </div>
 
+      {/* KHU VỰC CHỨA TRANH */}
       {loading ? (
         <div className="flex-1 flex justify-center items-center text-2xl font-bold text-gray-500">Đang tải tranh...</div>
       ) : communityDrawings.length === 0 ? (
         <div className="flex-1 flex justify-center items-center text-xl font-bold text-gray-500">Chưa có bức tranh nào được thả tim!</div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 gap-3 lg:gap-6 pb-6 px-1 flex-1">
-          {communityDrawings.map((item) => (
-            <div 
-              key={item.id} 
-              // SỰ KIỆN CLICK: Mở Popup khi bấm vào khung ảnh
-              onClick={() => setSelectedItem(item)}
-              className="bg-white rounded-2xl lg:rounded-3xl border-4 border-gray-800 shadow-[3px_3px_0px_0px_rgba(31,41,55,1)] lg:shadow-[6px_6px_0px_0px_rgba(31,41,55,1)] p-2.5 lg:p-4 flex flex-col hover:-translate-y-0.5 transition-transform cursor-pointer"
-            >
-              <div className="flex-1 h-20 sm:h-28 lg:h-32 border-4 border-gray-200 rounded-xl lg:rounded-2xl flex items-center justify-center mb-2 bg-gray-50 overflow-hidden relative pointer-events-none">
-                <MiniCanvas drawingData={item.drawing} />
-              </div>
-
-              <div className="flex justify-between items-end gap-1">
-                <div className="leading-tight flex-1 min-w-0">
-                  <span className="font-black text-[10px] sm:text-xs lg:text-sm text-gray-600 block truncate">{item.word}</span>
-                  <span className="font-bold text-[10px] sm:text-xs lg:text-sm text-gray-400 block truncate">
-                    {new Date(item.created_at).toLocaleDateString('vi-VN')}
-                  </span>
+        // SỬA Ở ĐÂY: Thêm thẻ div bọc ngoài Grid có flex-1, min-h-0 và overflow-y-auto để chỉ cuộn danh sách này
+        <div className="flex-1 min-h-0 overflow-y-auto -mx-1 px-1">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 gap-3 lg:gap-6 pb-6 pt-1">
+            {communityDrawings.map((item) => (
+              <div
+                key={item.id}
+                onClick={() => setSelectedItem(item)}
+                className="bg-white rounded-2xl lg:rounded-3xl border-4 border-gray-800 shadow-[3px_3px_0px_0px_rgba(31,41,55,1)] lg:shadow-[6px_6px_0px_0px_rgba(31,41,55,1)] p-2.5 lg:p-4 flex flex-col hover:-translate-y-0.5 transition-transform cursor-pointer"
+              >
+                <div className="flex-1 h-20 sm:h-28 lg:h-32 border-4 border-gray-200 rounded-xl lg:rounded-2xl flex items-center justify-center mb-2 bg-gray-50 overflow-hidden relative pointer-events-none">
+                  {item.drawing ? <MiniCanvas drawingData={item.drawing} /> : <span className="text-4xl">{item.emoji}</span>}
                 </div>
-                <button
-                  onClick={(e) => handleLike(e, item.id, item.like_count)}
-                  className="text-sm sm:text-base lg:text-lg flex flex-col items-center hover:scale-110 active:scale-90 transition-all shrink-0 text-red-500 font-bold"
-                >
-                  ❤️
-                  <span className="text-[10px] lg:text-xs">{item.like_count}</span>
-                </button>
+
+                <div className="flex justify-between items-end gap-1">
+                  <div className="leading-tight flex-1 min-w-0">
+                    <span className="font-black text-[10px] sm:text-xs lg:text-sm text-gray-600 block truncate">{item.word}</span>
+                    <span className="font-bold text-[10px] sm:text-xs lg:text-sm text-gray-400 block truncate">
+                      {new Date(item.created_at).toLocaleDateString('vi-VN')}
+                    </span>
+                  </div>
+                  <button
+                    onClick={(e) => handleLike(e, item.id, item.like_count)}
+                    className={`text-sm sm:text-base lg:text-lg flex flex-col items-center hover:scale-110 active:scale-90 transition-all shrink-0 font-bold ${likedItems[item.id] ? 'text-red-500' : 'text-gray-300 hover:text-red-300'}`}
+                  >
+                    {likedItems[item.id] ? '❤️' : '🤍'}
+                    <span className={`text-[10px] lg:text-xs ${likedItems[item.id] ? 'text-red-500' : 'text-gray-400'}`}>
+                      {item.like_count}
+                    </span>
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       )}
 
-      {/* TÍNH NĂNG POPUP PHÓNG TO HÌNH ẢNH */}
+      {/* POPUP XEM ẢNH CHI TIẾT (Lúc này Popup đã được giải phóng khỏi khung cuộn) */}
       {selectedItem && (
-        <div 
+        <div
           className="absolute inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
-          onClick={() => setSelectedItem(null)} // Click ra ngoài nền đen để đóng
+          onClick={() => setSelectedItem(null)}
         >
-          <div 
-  className="bg-white border-[6px] border-gray-800 rounded-3xl p-4 lg:p-8 shadow-[8px_8px_0px_0px_rgba(31,41,55,1)] flex flex-col items-center max-w-sm w-full relative" 
-  onClick={(e) => e.stopPropagation()} 
->
-            {/* Nút X đóng popup */}
-            <button 
+          <div
+            className="bg-white border-[6px] border-gray-800 rounded-3xl p-4 lg:p-8 shadow-[8px_8px_0px_0px_rgba(31,41,55,1)] flex flex-col items-center max-w-sm w-full relative"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
               onClick={() => setSelectedItem(null)}
               className="absolute -top-4 -right-4 bg-red-400 text-white border-4 border-gray-800 rounded-full w-10 h-10 flex items-center justify-center font-black text-xl hover:bg-red-500 shadow-[2px_2px_0px_0px_rgba(31,41,55,1)] active:translate-y-1 active:shadow-none transition-all z-10"
             >
@@ -744,18 +810,21 @@ function CommunityScreen({ setScreen }: any) {
               {selectedItem.word}
             </h2>
 
-            {/* Sử dụng lại MiniCanvas nhưng ở kích thước lớn hơn */}
-            <div className="w-full aspect-square border-4 border-gray-200 rounded-2xl bg-gray-50 flex items-center justify-center overflow-hidden mb-4 relative">
-                <MiniCanvas drawingData={selectedItem.drawing} />
+            <div className="w-full aspect-square border-4 border-gray-200 rounded-2xl bg-gray-50 flex items-center justify-center overflow-hidden mb-4 relative pointer-events-none">
+              {selectedItem.drawing ? <MiniCanvas drawingData={selectedItem.drawing} /> : <span className="text-6xl">{selectedItem.emoji}</span>}
             </div>
 
             <div className="flex justify-between items-center w-full px-2">
               <span className="font-bold text-gray-500 text-sm lg:text-base">
                 Ngày vẽ: {new Date(selectedItem.created_at).toLocaleDateString('vi-VN')}
               </span>
-              <div className="flex items-center gap-1.5 text-red-500 font-black text-xl">
-                ❤️ {selectedItem.like_count}
-              </div>
+
+              <button
+                onClick={(e) => handleLike(e, selectedItem.id, selectedItem.like_count)}
+                className={`flex items-center gap-1.5 font-black text-xl hover:scale-110 active:scale-90 transition-transform ${likedItems[selectedItem.id] ? 'text-red-500' : 'text-gray-300'}`}
+              >
+                {likedItems[selectedItem.id] ? '❤️' : '🤍'} {selectedItem.like_count}
+              </button>
             </div>
           </div>
         </div>
