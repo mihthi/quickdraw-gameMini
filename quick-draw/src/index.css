@@ -32,3 +32,7 @@
   /* ease-in-out giúp hiệu ứng chậm lại ở 2 đầu, tạo cảm giác rất mượt */
   animation: float 2.5s ease-in-out infinite; 
 }
+
+body {
+  font-family: 'Quicksand', sans-serif !important;
+}

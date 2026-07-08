@@ -121,11 +121,16 @@ export default function DrawingGameApp() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center p-0 lg:p-6 font-sans text-gray-900 select-none">
-     <div className="w-full h-[100dvh] lg:h-[85vh] lg:w-auto lg:aspect-[4/3] bg-white lg:rounded-[3rem] lg:shadow-[12px_12px_0px_0px_rgba(31,41,55,1)] lg:border-[12px] border-gray-800 overflow-hidden relative flex flex-col">
+    // Lớp nền xám bao phủ toàn màn hình
+    <div className="w-screen h-[100dvh] bg-gray-900 flex items-center justify-center p-2 sm:p-4 lg:p-6 font-sans text-gray-900 select-none overflow-hidden">
+      
+      {/* Khung game CHỐT CỨNG tỷ lệ 4:3, tự động thu phóng vừa vặn mọi màn hình */}
+      <div className="w-full h-full max-w-[1200px] aspect-[4/3] bg-white rounded-3xl sm:rounded-[2rem] lg:rounded-[3rem] shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] border-8 lg:border-[12px] border-gray-800 overflow-hidden relative flex flex-col mx-auto"
+           style={{ maxHeight: 'calc(100vw * 3 / 4)' }} // Ép giới hạn chiều cao dựa trên chiều rộng
+      >
         {renderScreen()}
       </div>
-    </div>
+    </div>  
   );
 }
 
