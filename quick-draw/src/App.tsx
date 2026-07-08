@@ -506,7 +506,9 @@ function GameScreen({ setScreen, currentWord, onNextRound, hintsLeft, setHintsLe
 
       <div className="flex justify-center items-end gap-2 lg:gap-6 mt-3 lg:mt-6 h-14 sm:h-18 lg:h-24 shrink-0">
         <div className={`text-3xl sm:text-5xl lg:text-7xl pb-1 ${isCorrect ? 'animate-bounce' : 'animate-pulse'}`}>🤖</div>
-        <div className={`${isCorrect ? 'bg-green-500' : 'bg-blue-500'} text-white font-bold text-xs sm:text-lg lg:text-2xl px-4 lg:px-8 py-2 lg:py-4 rounded-2xl rounded-tl-none border-4 border-gray-800 shadow-[3px_3px_0px_0px_rgba(31,41,55,1)] lg:shadow-[6px_6px_0px_0px_rgba(31,41,55,1)] mb-1 w-full max-w-xs sm:max-w-sm text-center truncate transition-colors`}>
+
+        {/* ĐÃ SỬA: Nới rộng khung (max-w-md lg:max-w-xl) và thay truncate bằng break-words */}
+        <div className={`${isCorrect ? 'bg-green-500' : 'bg-blue-500'} text-white font-bold text-xs sm:text-lg lg:text-2xl px-4 lg:px-8 py-2 lg:py-4 rounded-2xl rounded-tl-none border-4 border-gray-800 shadow-[3px_3px_0px_0px_rgba(31,41,55,1)] lg:shadow-[6px_6px_0px_0px_rgba(31,41,55,1)] mb-1 w-full max-w-md lg:max-w-xl text-center break-words transition-colors`}>
           {aiGuess}
         </div>
       </div>
