@@ -2,24 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 //import img1 from "../assets/img1.jpg"; // Đã sửa đường dẫn chuẩn xác dựa trên cấu trúc thư mục của bạn
 import { REAL_IMAGES } from './imageLibrary';
 import { supabase } from './supabaseClient';
+import { aiService } from './aiService';
 
 const img1 = "/assets/img1.jpg";
-// --- MOCK DATA ---  
-const MOCK_DRAWINGS = [
-  { id: 1, word: 'Máy bay', user: 'Bạn', emoji: '✈️', shared: false },
-  { id: 2, word: 'Quả táo', user: 'Bạn', emoji: '🍎', shared: true },
-  { id: 3, word: 'Ngôi nhà', user: 'Bạn', emoji: '🏠', shared: false },
-  { id: 4, word: 'Con mèo', user: 'Bạn', emoji: '🐱', shared: false },
-  { id: 5, word: 'Mặt trời', user: 'Bạn', emoji: '☀️', shared: true },
-  { id: 6, word: 'Cái xe', user: 'Bạn', emoji: '🚗', shared: false },
-];
-
-const COMMUNITY_DRAWINGS = [
-  { id: 101, word: 'Quả táo', user: 'Minh', emoji: '🍎', likes: 12 },
-  { id: 102, word: 'Quả táo', user: 'Lan', emoji: '🍏', likes: 5 },
-  { id: 103, word: 'Quả táo', user: 'Khoa', emoji: '🍎', likes: 8 },
-  { id: 104, word: 'Quả táo', user: 'Nhi', emoji: '🍏', likes: 20 },
-];
 
 // --- MAIN APP COMPONENT ---
 export default function DrawingGameApp() {
@@ -31,6 +16,16 @@ export default function DrawingGameApp() {
   // 1. TẠO STATE MỚI ĐỂ LƯU 3 TỪ KHÓA SẼ CHƠI
   const [gameDrawings, setGameDrawings] = useState<any[]>([]);
   const [isStarting, setIsStarting] = useState(false); // Trạng thái loading khi đang lấy từ khóa
+
+  const [isAiReady, setIsAiReady] = useState(false);
+
+  useEffect(() => {
+    // Gọi AI thức dậy từ file aiService
+    aiService.load().then(() => {
+      setIsAiReady(true);
+    });
+  }, []);
+
 
   // 2. HÀM BẮT ĐẦU GAME & LẤY TỪ KHÓA NGẪU NHIÊN TỪ SUPABASE
   const handleStartGame = async () => {
@@ -69,20 +64,29 @@ export default function DrawingGameApp() {
     }
   };
 
-  const handleNextRound = (drawingData: any) => {
-    // Lưu tọa độ nét vẽ thực tế vào từ khóa hiện tại
-    setGameDrawings(prev => {
-      const updated = [...prev];
-      updated[currentRound].drawingData = drawingData;
-      return updated;
-    });
+  const handleNextRound = (drawingData: any, isWin: boolean) => {
+    // Dùng setCurrentRound làm gốc để lấy đúng index của vòng vừa chơi xong
+    setCurrentRound(prevRound => {
+      // 1. Lưu kết quả vào đúng mảng
+      setGameDrawings(prevDrawings => {
+        const updated = [...prevDrawings];
+        if (updated[prevRound]) {
+          updated[prevRound].drawingData = drawingData;
+          updated[prevRound].isWin = isWin;
+        }
+        return updated;
+      });
 
-    if (currentRound < gameDrawings.length - 1) {
-      setCurrentRound(prev => prev + 1);
-      setCurrentScreen('ready');
-    } else {
-      setCurrentScreen('summary');
-    }
+      // 2. Tính toán vòng tiếp theo
+      const nextRound = prevRound + 1;
+      if (nextRound < 3) { // Chốt cứng số 3 vì game luôn có 3 từ khóa
+        setCurrentScreen('ready');
+        return nextRound;
+      } else {
+        setCurrentScreen('summary');
+        return prevRound;
+      }
+    });
   };
 
   const currentWordObj = gameDrawings[currentRound] || null;
@@ -95,7 +99,15 @@ export default function DrawingGameApp() {
       case 'ready':
         return <ReadyScreen setScreen={setCurrentScreen} currentWord={currentWordObj} />;
       case 'game':
-        return <GameScreen setScreen={setCurrentScreen} currentWord={currentWordObj} onNextRound={handleNextRound} hintsLeft={hintsLeft} setHintsLeft={setHintsLeft} />;
+        //return <GameScreen setScreen={setCurrentScreen} currentWord={currentWordObj} onNextRound={handleNextRound} hintsLeft={hintsLeft} setHintsLeft={setHintsLeft} />;
+        return <GameScreen
+          setScreen={setCurrentScreen}
+          currentWord={currentWordObj}
+          onNextRound={handleNextRound}
+          hintsLeft={hintsLeft}
+          setHintsLeft={setHintsLeft}
+          isAiReady={isAiReady}
+        />;
       case 'summary':
         // Truyền mảng 3 từ khóa vào màn hình tổng kết để nó biết phải in ra cái gì
         return <SummaryScreen setScreen={setCurrentScreen} setSelectedDrawing={setSelectedDrawing} gameDrawings={gameDrawings} />;
@@ -199,18 +211,76 @@ function ReadyScreen({ setScreen, currentWord }: any) {
 
 // --- SCREEN 3: GAMEPLAY SCREEN ---
 // --- SCREEN 3: GAMEPLAY SCREEN ---
-function GameScreen({ setScreen, currentWord, onNextRound, hintsLeft, setHintsLeft }: any) {
+
+function GameScreen({ setScreen, currentWord, onNextRound, hintsLeft, setHintsLeft, isAiReady }: any) {
   const [aiGuess, setAiGuess] = useState("AI đang xem bé vẽ...");
   const [hintStatus, setHintStatus] = useState<'IDLE' | 'SHOWING' | 'HIDING'>('IDLE');
   const [timeLeft, setTimeLeft] = useState(20);
   const [activeTool, setActiveTool] = useState<'brush' | 'eraser'>('brush');
 
+  const [isCorrect, setIsCorrect] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
 
-  // THÊM MỚI: State lưu tọa độ vẽ
   const [strokes, setStrokes] = useState<any[]>([]);
+  const strokesRef = useRef<any[]>([]);
   const [currentPath, setCurrentPath] = useState<{ x: number[], y: number[] }>({ x: [], y: [] });
+
+  // THÊM DÒNG NÀY: Khóa chống gọi đúp chuyển vòng
+  const isRoundEndedRef = useRef(false);
+
+  const runAIPrediction = async () => {
+    // Nếu đã đóng khóa thì không làm gì cả
+    if (!canvasRef.current || isCorrect || !isAiReady || isRoundEndedRef.current) return;
+
+    const result = await aiService.predict(canvasRef.current);
+
+    // Kiểm tra lại khóa sau khi await (Đề phòng lúc chờ AI thì hết giờ)
+    if (!result || isRoundEndedRef.current) {
+      if (strokes.length > 0 && !isRoundEndedRef.current) {
+        setAiGuess("Đang suy nghĩ... Vẽ thêm chút nữa đi!");
+      }
+      return;
+    }
+
+    if (result.label === currentWord?.label) {
+      isRoundEndedRef.current = true; // ĐÓNG KHÓA NGAY LẬP TỨC
+      setIsCorrect(true);
+      setAiGuess(`🎉 ĐÚNG RỒI! Là ${currentWord?.word.toUpperCase()}!`);
+
+      setTimeout(() => {
+        onNextRound(strokesRef.current, true);
+      }, 1500);
+    } else {
+      setAiGuess(`🤔 Hình như là... ${result.word}?`);
+    }
+  };
+
+  // Hẹn giờ dự đoán liên tục
+  useEffect(() => {
+    // Nếu đã đoán đúng hoặc AI chưa sẵn sàng thì không làm gì cả
+    if (isCorrect || !isAiReady) return;
+
+    // Chỉ chạy dự đoán khi có nét vẽ (strokes.length > 0)
+    if (strokes.length === 0) return;
+
+    const timer = setTimeout(() => {
+      runAIPrediction();
+    }, 200); // Chờ 0.2 giây sau khi người dùng ngừng vẽ mới gọi AI
+
+    return () => clearTimeout(timer);
+  }, [strokes, isCorrect, isAiReady]);
+
+  // Cập nhật câu chào ban đầu
+  useEffect(() => {
+    setIsCorrect(false);
+    setTimeLeft(20);
+    isRoundEndedRef.current = false; // THÊM DÒNG NÀY ĐỂ MỞ KHÓA
+    handleClearCanvas();
+
+    if (!isAiReady) setAiGuess("Đang khởi động AI...");
+    else setAiGuess("Hãy vẽ đi, AI đang xem...");
+  }, [currentWord, isAiReady]);
 
   const handleShowHint = () => {
     if (hintsLeft > 0 && hintStatus === 'IDLE') {
@@ -221,33 +291,25 @@ function GameScreen({ setScreen, currentWord, onNextRound, hintsLeft, setHintsLe
     }
   };
 
+  // 2. ĐÃ SỬA: Dừng đếm ngược thời gian nếu đã đoán đúng
   useEffect(() => {
-    setTimeLeft(20);
+    if (isCorrect) return;
+
     const timer = setInterval(() => {
       setTimeLeft(prev => prev > 0 ? prev - 1 : 0);
     }, 1000);
     return () => clearInterval(timer);
-  }, [currentWord]);
+  }, [currentWord, isCorrect]);
 
-  // CẬP NHẬT: Gửi mảng tọa độ lên App.tsx khi hết giờ
+  // 3. ĐÃ SỬA: Chuyển vòng khi hết giờ (Khóa nếu đã đoán đúng)
   useEffect(() => {
-    if (timeLeft === 0) {
-      onNextRound(strokes);
+    if (timeLeft === 0 && !isCorrect && !isRoundEndedRef.current) {
+      isRoundEndedRef.current = true; // ĐÓNG KHÓA NGAY LẬP TỨC
+      onNextRound(strokesRef.current, false);
     }
-  }, [timeLeft, onNextRound, strokes]);
+  }, [timeLeft]);
 
-  useEffect(() => {
-    const guesses = ["Hình như là đường thẳng...", "Có phải là hình tròn?", `Đó là ${currentWord?.word?.toUpperCase()}!`];
-    let i = 0;
-    const interval = setInterval(() => {
-      setAiGuess(guesses[i]);
-      i++;
-      if (i >= guesses.length) {
-        clearInterval(interval);
-      }
-    }, 5000);
-    return () => clearInterval(interval);
-  }, [currentWord]);
+  // }, [timeLeft, onNextRound, strokes, isCorrect]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -257,6 +319,13 @@ function GameScreen({ setScreen, currentWord, onNextRound, hintsLeft, setHintsLe
       if (canvas && canvas.parentElement) {
         canvas.width = canvas.parentElement.clientWidth;
         canvas.height = canvas.parentElement.clientHeight;
+
+        // --- THÊM PHẦN NÀY ĐỂ TÔ NỀN TRẮNG ---
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.fillStyle = "white";
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
       }
     };
 
@@ -265,18 +334,22 @@ function GameScreen({ setScreen, currentWord, onNextRound, hintsLeft, setHintsLe
     return () => window.removeEventListener('resize', updateCanvasSize);
   }, [currentWord]);
 
-  // CẬP NHẬT: Xóa toàn bộ canvas và dữ liệu nét vẽ
   const handleClearCanvas = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    ctx.fillStyle = "white";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
     setStrokes([]);
+    strokesRef.current = []; // THÊM DÒNG NÀY ĐỂ XÓA SỔ TỨC THỜI
+    setAiGuess("Hãy vẽ đi, AI đang xem...");
   };
 
-  // CẬP NHẬT: 3 hàm vẽ để lưu tọa độ
   const startDrawing = (e: any) => {
+    if (isCorrect) return; // 4. ĐÃ SỬA: Khóa vẽ khi thắng
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
@@ -293,7 +366,7 @@ function GameScreen({ setScreen, currentWord, onNextRound, hintsLeft, setHintsLe
   };
 
   const draw = (e: any) => {
-    if (!isDrawing) return;
+    if (!isDrawing || isCorrect) return; // 4. ĐÃ SỬA: Khóa vẽ khi thắng
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
@@ -311,7 +384,7 @@ function GameScreen({ setScreen, currentWord, onNextRound, hintsLeft, setHintsLe
     } else {
       ctx.globalCompositeOperation = 'source-over';
       ctx.strokeStyle = '#1f2937';
-      ctx.lineWidth = 6;
+      ctx.lineWidth = 12;
       setCurrentPath(prev => ({
         x: [...prev.x, x],
         y: [...prev.y, y]
@@ -325,14 +398,24 @@ function GameScreen({ setScreen, currentWord, onNextRound, hintsLeft, setHintsLe
 
   const stopDrawing = () => {
     if (isDrawing && currentPath.x.length > 0) {
-      setStrokes(prev => [...prev, [currentPath.x, currentPath.y]]);
+      const newStroke = [currentPath.x, currentPath.y];
+
+      // Lưu ngay vào sổ chớp nhoáng trước
+      strokesRef.current = [...strokesRef.current, newStroke];
+
+      // Sau đó mới báo cho React cập nhật giao diện
+      setStrokes(strokesRef.current);
     }
     setIsDrawing(false);
+
+    setTimeout(() => {
+      runAIPrediction();
+    }, 50);
   };
 
   return (
     <div className="h-full w-full bg-emerald-200 p-3 sm:p-5 lg:p-8 flex flex-col relative">
-      {/* Header dàn hàng ngang */}
+      {/* Header */}
       <div className="flex justify-between items-center mb-3 lg:mb-6 z-10 gap-2 w-full">
         <div className="flex items-center gap-2 lg:gap-4 flex-1 min-w-0">
           <button onClick={() => setScreen('home')} className="w-9 h-9 sm:w-11 sm:h-11 lg:w-14 lg:h-14 bg-white border-4 border-gray-800 rounded-full flex justify-center items-center text-sm sm:text-base lg:text-2xl font-bold shadow-[3px_3px_0px_0px_rgba(31,41,55,1)] hover:bg-gray-100 active:translate-y-1 active:shadow-none shrink-0">⬅</button>
@@ -341,13 +424,13 @@ function GameScreen({ setScreen, currentWord, onNextRound, hintsLeft, setHintsLe
           </h2>
         </div>
         <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
-          <div className="bg-white px-2.5 sm:px-4 lg:px-6 py-1.5 sm:py-2 lg:py-3 rounded-full border-4 border-gray-800 shadow-[3px_3px_0px_0px_rgba(31,41,55,1)] text-xs sm:text-base lg:text-2xl font-black flex items-center gap-0.5">
+          <div className={`bg-white px-2.5 sm:px-4 lg:px-6 py-1.5 sm:py-2 lg:py-3 rounded-full border-4 border-gray-800 shadow-[3px_3px_0px_0px_rgba(31,41,55,1)] text-xs sm:text-base lg:text-2xl font-black flex items-center gap-0.5 ${isCorrect ? 'text-green-500' : ''}`}>
             ⏱️{timeLeft}s
           </div>
           <button
             onClick={handleShowHint}
-            disabled={hintsLeft === 0 || hintStatus !== 'IDLE'}
-            className={`${hintsLeft === 0 || hintStatus !== 'IDLE' ? 'bg-gray-400 opacity-80' : 'bg-yellow-400 hover:bg-yellow-300 active:translate-y-1'} text-xs sm:text-sm lg:text-xl font-black py-1.5 sm:py-2 lg:py-3 px-2.5 sm:px-4 lg:px-6 rounded-full border-4 border-gray-800 shadow-[3px_3px_0px_0px_rgba(31,41,55,1)] active:shadow-none flex items-center gap-1 transition-all`}
+            disabled={hintsLeft === 0 || hintStatus !== 'IDLE' || isCorrect}
+            className={`${hintsLeft === 0 || hintStatus !== 'IDLE' || isCorrect ? 'bg-gray-400 opacity-80' : 'bg-yellow-400 hover:bg-yellow-300 active:translate-y-1'} text-xs sm:text-sm lg:text-xl font-black py-1.5 sm:py-2 lg:py-3 px-2.5 sm:px-4 lg:px-6 rounded-full border-4 border-gray-800 shadow-[3px_3px_0px_0px_rgba(31,41,55,1)] active:shadow-none flex items-center gap-1 transition-all`}
           >
             💡 Gợi ý {hintsLeft > 0 && `(${hintsLeft})`}
           </button>
@@ -366,35 +449,40 @@ function GameScreen({ setScreen, currentWord, onNextRound, hintsLeft, setHintsLe
           onTouchStart={startDrawing}
           onTouchMove={draw}
           onTouchEnd={stopDrawing}
-          className={`absolute inset-0 w-full h-full ${activeTool === 'eraser' ? 'cursor-cell' : 'cursor-crosshair'}`}
+          className={`absolute inset-0 w-full h-full ${activeTool === 'eraser' ? 'cursor-cell' : 'cursor-crosshair'} ${isCorrect ? 'pointer-events-none opacity-80' : ''}`}
         />
 
-        <div className="absolute top-3 left-3 lg:top-6 lg:left-6 flex flex-col gap-2 lg:gap-3 z-10">
-          <button
-            onClick={() => setActiveTool('brush')}
-            className={`w-10 h-10 lg:w-14 lg:h-14 rounded-full border-4 border-gray-800 shadow-[3px_3px_0px_0px_rgba(31,41,55,1)] flex items-center justify-center text-lg lg:text-2xl transition-all ${activeTool === 'brush' ? 'bg-cyan-300 scale-110 shadow-none translate-y-1' : 'bg-white hover:bg-gray-100 active:translate-y-1 active:shadow-none'
-              }`}
-            title="Dùng cọ vẽ"
-          >
-            🖌️
-          </button>
-          <button
-            onClick={() => setActiveTool('eraser')}
-            className={`w-10 h-10 lg:w-14 lg:h-14 rounded-full border-4 border-gray-800 shadow-[3px_3px_0px_0px_rgba(31,41,55,1)] flex items-center justify-center text-lg lg:text-2xl transition-all ${activeTool === 'eraser' ? 'bg-pink-300 scale-110 shadow-none translate-y-1' : 'bg-white hover:bg-gray-100 active:translate-y-1 active:shadow-none'
-              }`}
-            title="Dùng cục tẩy"
-          >
-            🧽
-          </button>
-        </div>
+        {/* 6. ĐÃ SỬA: Ẩn các công cụ vẽ khi đã đoán trúng */}
+        {!isCorrect && (
+          <>
+            <div className="absolute top-3 left-3 lg:top-6 lg:left-6 flex flex-col gap-2 lg:gap-3 z-10">
+              <button
+                onClick={() => setActiveTool('brush')}
+                className={`w-10 h-10 lg:w-14 lg:h-14 rounded-full border-4 border-gray-800 shadow-[3px_3px_0px_0px_rgba(31,41,55,1)] flex items-center justify-center text-lg lg:text-2xl transition-all ${activeTool === 'brush' ? 'bg-cyan-300 scale-110 shadow-none translate-y-1' : 'bg-white hover:bg-gray-100 active:translate-y-1 active:shadow-none'
+                  }`}
+                title="Dùng cọ vẽ"
+              >
+                🖌️
+              </button>
+              <button
+                onClick={() => setActiveTool('eraser')}
+                className={`w-10 h-10 lg:w-14 lg:h-14 rounded-full border-4 border-gray-800 shadow-[3px_3px_0px_0px_rgba(31,41,55,1)] flex items-center justify-center text-lg lg:text-2xl transition-all ${activeTool === 'eraser' ? 'bg-pink-300 scale-110 shadow-none translate-y-1' : 'bg-white hover:bg-gray-100 active:translate-y-1 active:shadow-none'
+                  }`}
+                title="Dùng cục tẩy"
+              >
+                🧽
+              </button>
+            </div>
 
-        <button
-          onClick={handleClearCanvas}
-          className="absolute bottom-3 right-3 lg:bottom-6 lg:right-6 w-10 h-10 lg:w-14 lg:h-14 bg-red-400 hover:bg-red-300 text-white rounded-full border-4 border-gray-800 shadow-[3px_3px_0px_0px_rgba(31,41,55,1)] flex items-center justify-center text-lg lg:text-2xl active:translate-y-1 active:shadow-none transition-all z-10"
-          title="Xóa hình vẽ"
-        >
-          🗑️
-        </button>
+            <button
+              onClick={handleClearCanvas}
+              className="absolute bottom-3 right-3 lg:bottom-6 lg:right-6 w-10 h-10 lg:w-14 lg:h-14 bg-red-400 hover:bg-red-300 text-white rounded-full border-4 border-gray-800 shadow-[3px_3px_0px_0px_rgba(31,41,55,1)] flex items-center justify-center text-lg lg:text-2xl active:translate-y-1 active:shadow-none transition-all z-10"
+              title="Xóa hình vẽ"
+            >
+              🗑️
+            </button>
+          </>
+        )}
 
         {hintStatus !== 'IDLE' && (
           <div
@@ -417,8 +505,8 @@ function GameScreen({ setScreen, currentWord, onNextRound, hintsLeft, setHintsLe
       </div>
 
       <div className="flex justify-center items-end gap-2 lg:gap-6 mt-3 lg:mt-6 h-14 sm:h-18 lg:h-24 shrink-0">
-        <div className="text-3xl sm:text-5xl lg:text-7xl animate-pulse pb-1">🤖</div>
-        <div className="bg-blue-500 text-white font-bold text-xs sm:text-lg lg:text-2xl px-4 lg:px-8 py-2 lg:py-4 rounded-2xl rounded-tl-none border-4 border-gray-800 shadow-[3px_3px_0px_0px_rgba(31,41,55,1)] lg:shadow-[6px_6px_0px_0px_rgba(31,41,55,1)] mb-1 w-full max-w-xs sm:max-w-sm text-center truncate">
+        <div className={`text-3xl sm:text-5xl lg:text-7xl pb-1 ${isCorrect ? 'animate-bounce' : 'animate-pulse'}`}>🤖</div>
+        <div className={`${isCorrect ? 'bg-green-500' : 'bg-blue-500'} text-white font-bold text-xs sm:text-lg lg:text-2xl px-4 lg:px-8 py-2 lg:py-4 rounded-2xl rounded-tl-none border-4 border-gray-800 shadow-[3px_3px_0px_0px_rgba(31,41,55,1)] lg:shadow-[6px_6px_0px_0px_rgba(31,41,55,1)] mb-1 w-full max-w-xs sm:max-w-sm text-center truncate transition-colors`}>
           {aiGuess}
         </div>
       </div>
@@ -444,8 +532,8 @@ function SummaryScreen({ setScreen, setSelectedDrawing, gameDrawings }: any) {
       </div>
 
       {/* ĐÃ SỬA LỖI FONT CHỮ: Thay WebkitTextStroke bằng textShadow */}
-      <h2 className="text-2xl sm:text-3xl lg:text-5xl font-black text-center mb-4 lg:mb-8 text-white uppercase tracking-wider" 
-          style={{ textShadow: '2px 2px 0px #1f2937, -1.5px -1.5px 0 #1f2937, 1.5px -1.5px 0 #1f2937, -1.5px 1.5px 0 #1f2937, 1.5px 1.5px 0 #1f2937' }}>
+      <h2 className="text-2xl sm:text-3xl lg:text-5xl font-black text-center mb-4 lg:mb-8 text-white uppercase tracking-wider"
+        style={{ textShadow: '2px 2px 0px #1f2937, -1.5px -1.5px 0 #1f2937, 1.5px -1.5px 0 #1f2937, -1.5px 1.5px 0 #1f2937, 1.5px 1.5px 0 #1f2937' }}>
         Nghệ sĩ tuyệt vời!
       </h2>
 
@@ -470,6 +558,14 @@ function SummaryScreen({ setScreen, setSelectedDrawing, gameDrawings }: any) {
 
             <div className="mt-2 text-center">
               <span className="font-bold text-xs sm:text-sm lg:text-lg truncate block">{item.word} của bạn</span>
+
+              {/* ĐOẠN CODE MỚI: HIỂN THỊ TRẠNG THÁI */}
+              {item.isWin ? (
+                <span className="text-green-500 font-black text-[10px] sm:text-xs uppercase block mt-1">✅ Vẽ chính xác</span>
+              ) : (
+                <span className="text-red-500 font-black text-[10px] sm:text-xs uppercase block mt-1">❌ Chưa chính xác</span>
+              )}
+
               <button
                 onClick={handleShare}
                 className="mt-1.5 bg-yellow-400 hover:bg-yellow-300 text-[10px] sm:text-xs lg:text-sm font-black py-1 lg:py-2 px-3 lg:px-6 rounded-full border-2 border-gray-800 mx-auto block transition-transform active:translate-y-0.5 shadow-[2px_2px_0px_0px_rgba(31,41,55,1)] uppercase"
