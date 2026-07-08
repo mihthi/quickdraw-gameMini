@@ -122,7 +122,7 @@ export default function DrawingGameApp() {
 
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center p-0 lg:p-6 font-sans text-gray-900 select-none">
-      <div className="w-full h-[100dvh] lg:h-auto lg:h-[85vh] max-w-5xl bg-white lg:rounded-[3rem] lg:shadow-[12px_12px_0px_0px_rgba(31,41,55,1)] lg:border-[12px] border-gray-800 overflow-hidden relative flex flex-col">
+     <div className="w-full h-[100dvh] lg:h-[85vh] lg:w-auto lg:aspect-[4/3] bg-white lg:rounded-[3rem] lg:shadow-[12px_12px_0px_0px_rgba(31,41,55,1)] lg:border-[12px] border-gray-800 overflow-hidden relative flex flex-col">
         {renderScreen()}
       </div>
     </div>
@@ -158,7 +158,7 @@ function HomeScreen({ setScreen, onStart, isStarting }: any) {
 
       {/* Robot Emoji tự động căn chỉnh kích cỡ tương thích mobile và laptop */}
       <div
-        className="z-10 absolute top-[45%] sm:top-[50%] lg:top-[55%] left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-[90px] sm:text-[130px] lg:text-[180px] animate-bounce"
+        className="z-10 absolute top-[45%] sm:top-[50%] lg:top-[55%] left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-[90px] sm:text-[130px] lg:text-[140px] animate-bounce"
         style={{ animationDuration: '3s' }}
       >
         🤖
