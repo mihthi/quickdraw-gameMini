@@ -122,7 +122,7 @@ export default function DrawingGameApp() {
 
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center p-0 lg:p-6 font-sans text-gray-900 select-none">
-      <div className="w-full h-[100dvh] lg:h-auto lg:aspect-[4/3] max-w-5xl bg-white lg:rounded-[3rem] lg:shadow-[12px_12px_0px_0px_rgba(31,41,55,1)] lg:border-[12px] border-gray-800 overflow-hidden relative flex flex-col">
+      <div className="w-full h-[100dvh] lg:h-auto lg:h-[85vh] max-w-5xl bg-white lg:rounded-[3rem] lg:shadow-[12px_12px_0px_0px_rgba(31,41,55,1)] lg:border-[12px] border-gray-800 overflow-hidden relative flex flex-col">
         {renderScreen()}
       </div>
     </div>
@@ -220,11 +220,12 @@ function GameScreen({ setScreen, currentWord, onNextRound, hintsLeft, setHintsLe
 
   const [isCorrect, setIsCorrect] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [isDrawing, setIsDrawing] = useState(false);
+
 
   const [strokes, setStrokes] = useState<any[]>([]);
   const strokesRef = useRef<any[]>([]);
-  const [currentPath, setCurrentPath] = useState<{ x: number[], y: number[] }>({ x: [], y: [] });
+  const isDrawingRef = useRef(false);
+  const currentPathRef = useRef<{ x: number[], y: number[] }>({ x: [], y: [] });
 
   // THÊM DÒNG NÀY: Khóa chống gọi đúp chuyển vòng
   const isRoundEndedRef = useRef(false);
@@ -305,9 +306,14 @@ function GameScreen({ setScreen, currentWord, onNextRound, hintsLeft, setHintsLe
   useEffect(() => {
     if (timeLeft === 0 && !isCorrect && !isRoundEndedRef.current) {
       isRoundEndedRef.current = true; // ĐÓNG KHÓA NGAY LẬP TỨC
+      if (isDrawingRef.current && currentPathRef.current.x.length > 0) {
+        const newStroke = [currentPathRef.current.x, currentPathRef.current.y];
+        strokesRef.current = [...strokesRef.current, newStroke];
+      }
+
       onNextRound(strokesRef.current, false);
     }
-  }, [timeLeft]);
+  }, [timeLeft])
 
   // }, [timeLeft, onNextRound, strokes, isCorrect]);
 
@@ -349,7 +355,7 @@ function GameScreen({ setScreen, currentWord, onNextRound, hintsLeft, setHintsLe
   };
 
   const startDrawing = (e: any) => {
-    if (isCorrect) return; // 4. ĐÃ SỬA: Khóa vẽ khi thắng
+    if (isCorrect) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
@@ -361,12 +367,15 @@ function GameScreen({ setScreen, currentWord, onNextRound, hintsLeft, setHintsLe
 
     ctx.beginPath();
     ctx.moveTo(x, y);
-    setIsDrawing(true);
-    setCurrentPath({ x: [x], y: [y] });
+
+    // ĐÃ SỬA: Ghi chép tức thời bằng Ref
+    isDrawingRef.current = true;
+    currentPathRef.current = { x: [x], y: [y] };
   };
 
   const draw = (e: any) => {
-    if (!isDrawing || isCorrect) return; // 4. ĐÃ SỬA: Khóa vẽ khi thắng
+    // ĐÃ SỬA: Dùng isDrawingRef
+    if (!isDrawingRef.current || isCorrect) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
@@ -385,10 +394,10 @@ function GameScreen({ setScreen, currentWord, onNextRound, hintsLeft, setHintsLe
       ctx.globalCompositeOperation = 'source-over';
       ctx.strokeStyle = '#1f2937';
       ctx.lineWidth = 12;
-      setCurrentPath(prev => ({
-        x: [...prev.x, x],
-        y: [...prev.y, y]
-      }));
+
+      // ĐÃ SỬA: Đẩy tọa độ trực tiếp vào Ref không cần chờ React
+      currentPathRef.current.x.push(x);
+      currentPathRef.current.y.push(y);
     }
 
     ctx.lineCap = 'round';
@@ -397,16 +406,16 @@ function GameScreen({ setScreen, currentWord, onNextRound, hintsLeft, setHintsLe
   };
 
   const stopDrawing = () => {
-    if (isDrawing && currentPath.x.length > 0) {
-      const newStroke = [currentPath.x, currentPath.y];
-
-      // Lưu ngay vào sổ chớp nhoáng trước
+    // ĐÃ SỬA: Đọc dữ liệu từ Ref
+    if (isDrawingRef.current && currentPathRef.current.x.length > 0) {
+      const newStroke = [currentPathRef.current.x, currentPathRef.current.y];
       strokesRef.current = [...strokesRef.current, newStroke];
-
-      // Sau đó mới báo cho React cập nhật giao diện
       setStrokes(strokesRef.current);
     }
-    setIsDrawing(false);
+
+    // Reset ngay lập tức
+    isDrawingRef.current = false;
+    currentPathRef.current = { x: [], y: [] };
 
     setTimeout(() => {
       runAIPrediction();
