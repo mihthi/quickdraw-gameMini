@@ -194,29 +194,31 @@ export default function GameScreen({ setScreen, currentWord, onNextRound, hintsL
   };
 
  return (
-    <div className="h-full w-full bg-emerald-200 p-2 sm:p-3 lg:p-4 flex flex-col relative">
-      <div className="flex justify-between items-center mb-1.5 lg:mb-3 z-10 gap-1.5 w-full shrink-0">
-        <div className="flex items-center gap-1.5 lg:gap-2 flex-1 min-w-0">
-          <button onClick={() => setScreen('home')} className="w-7 h-7 sm:w-9 sm:h-9 lg:w-11 lg:h-11 bg-white border-2 sm:border-4 border-gray-800 rounded-full flex justify-center items-center text-xs sm:text-sm lg:text-lg font-bold shadow-[2px_2px_0px_0px_rgba(31,41,55,1)] hover:bg-gray-100 active:translate-y-1 active:shadow-none shrink-0">⬅</button>
-          <h2 className="text-xs sm:text-sm lg:text-lg font-black bg-white px-2 sm:px-3 lg:px-5 py-1 sm:py-1.5 rounded-full border-2 sm:border-4 border-gray-800 shadow-[2px_2px_0px_0px_rgba(31,41,55,1)] text-blue-600 truncate">
+    <div className="h-full w-full bg-emerald-200 p-3 sm:p-4 lg:p-4 flex flex-col relative">
+      
+      <div className="flex justify-between items-center mb-2.5 lg:mb-3 z-10 gap-2 w-full shrink-0">
+        <div className="flex items-center gap-2 lg:gap-2 flex-1 min-w-0">
+          {/* ĐÃ SỬA: Tăng kích thước nút back */}
+          <button onClick={() => setScreen('home')} className="w-10 h-10 sm:w-11 sm:h-11 lg:w-11 lg:h-11 bg-white border-4 border-gray-800 rounded-full flex justify-center items-center text-sm sm:text-base lg:text-lg font-bold shadow-[3px_3px_0px_0px_rgba(31,41,55,1)] hover:bg-gray-100 active:translate-y-1 active:shadow-none shrink-0">⬅</button>
+          <h2 className="text-sm sm:text-base lg:text-lg font-black bg-white px-3 sm:px-4 lg:px-5 py-2 sm:py-2 rounded-full border-4 border-gray-800 shadow-[3px_3px_0px_0px_rgba(31,41,55,1)] text-blue-600 truncate">
             Vẽ: {currentWord?.word?.toUpperCase()}
           </h2>
         </div>
-        <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
-          <div className={`bg-white px-2 sm:px-3 lg:px-4 py-1 sm:py-1.5 rounded-full border-2 sm:border-4 border-gray-800 shadow-[2px_2px_0px_0px_rgba(31,41,55,1)] text-[10px] sm:text-xs lg:text-base font-black flex items-center gap-0.5 ${isCorrect ? 'text-green-500' : ''}`}>
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          <div className={`bg-white px-3 sm:px-4 lg:px-4 py-2 sm:py-2 rounded-full border-4 border-gray-800 shadow-[3px_3px_0px_0px_rgba(31,41,55,1)] text-xs sm:text-sm lg:text-base font-black flex items-center gap-0.5 ${isCorrect ? 'text-green-500' : ''}`}>
             ⏱️{timeLeft}s
           </div>
           <button
             onClick={handleShowHint}
             disabled={hintsLeft === 0 || hintStatus !== 'IDLE' || isCorrect}
-            className={`${hintsLeft === 0 || hintStatus !== 'IDLE' || isCorrect ? 'bg-gray-400 opacity-80' : 'bg-yellow-400 hover:bg-yellow-300 active:translate-y-1'} text-[10px] sm:text-xs lg:text-base font-black py-1 sm:py-1.5 px-2 sm:px-3 lg:px-4 rounded-full border-2 sm:border-4 border-gray-800 shadow-[2px_2px_0px_0px_rgba(31,41,55,1)] active:shadow-none flex items-center gap-1 transition-all`}
+            className={`${hintsLeft === 0 || hintStatus !== 'IDLE' || isCorrect ? 'bg-gray-400 opacity-80' : 'bg-yellow-400 hover:bg-yellow-300 active:translate-y-1'} text-xs sm:text-sm lg:text-base font-black py-2 sm:py-2 px-3 sm:px-4 lg:px-4 rounded-full border-4 border-gray-800 shadow-[3px_3px_0px_0px_rgba(31,41,55,1)] active:shadow-none flex items-center gap-1 transition-all`}
           >
             💡 Gợi ý {hintsLeft > 0 && `(${hintsLeft})`}
           </button>
         </div>
       </div>
 
-      <div className="flex-1 bg-white rounded-xl lg:rounded-[2rem] border-4 border-gray-800 shadow-[4px_4px_0px_0px_rgba(31,41,55,1)] lg:shadow-[6px_6px_0px_0px_rgba(31,41,55,1)] relative flex flex-col items-center justify-center overflow-hidden touch-none min-h-0">
+      <div className="flex-1 bg-white rounded-2xl lg:rounded-[2rem] border-4 border-gray-800 shadow-[4px_4px_0px_0px_rgba(31,41,55,1)] lg:shadow-[6px_6px_0px_0px_rgba(31,41,55,1)] relative flex flex-col items-center justify-center overflow-hidden touch-none min-h-0">
 
         <canvas
           ref={canvasRef}
@@ -232,26 +234,28 @@ export default function GameScreen({ setScreen, currentWord, onNextRound, hintsL
 
         {!isCorrect && (
           <>
-            <div className="absolute top-2 left-2 lg:top-3 lg:left-3 flex flex-col gap-1.5 lg:gap-2 z-10">
+            <div className="absolute top-2 left-2 lg:top-3 lg:left-3 flex flex-col gap-2 lg:gap-2 z-10">
+              {/* ĐÃ SỬA: Tăng w-10 h-10 cho nút cọ và tẩy */}
               <button
                 onClick={() => setActiveTool('brush')}
-                className={`w-7 h-7 sm:w-9 sm:h-9 lg:w-11 lg:h-11 rounded-full border-2 sm:border-4 border-gray-800 shadow-[2px_2px_0px_0px_rgba(31,41,55,1)] flex items-center justify-center text-sm lg:text-lg transition-all ${activeTool === 'brush' ? 'bg-cyan-300 scale-110 shadow-none translate-y-1' : 'bg-white hover:bg-gray-100 active:translate-y-1 active:shadow-none'}`}
+                className={`w-10 h-10 sm:w-11 sm:h-11 lg:w-11 lg:h-11 rounded-full border-4 border-gray-800 shadow-[3px_3px_0px_0px_rgba(31,41,55,1)] flex items-center justify-center text-base lg:text-lg transition-all ${activeTool === 'brush' ? 'bg-cyan-300 scale-110 shadow-none translate-y-1' : 'bg-white hover:bg-gray-100 active:translate-y-1 active:shadow-none'}`}
                 title="Dùng cọ vẽ"
               >
                 🖌️
               </button>
               <button
                 onClick={() => setActiveTool('eraser')}
-                className={`w-7 h-7 sm:w-9 sm:h-9 lg:w-11 lg:h-11 rounded-full border-2 sm:border-4 border-gray-800 shadow-[2px_2px_0px_0px_rgba(31,41,55,1)] flex items-center justify-center text-sm lg:text-lg transition-all ${activeTool === 'eraser' ? 'bg-pink-300 scale-110 shadow-none translate-y-1' : 'bg-white hover:bg-gray-100 active:translate-y-1 active:shadow-none'}`}
+                className={`w-10 h-10 sm:w-11 sm:h-11 lg:w-11 lg:h-11 rounded-full border-4 border-gray-800 shadow-[3px_3px_0px_0px_rgba(31,41,55,1)] flex items-center justify-center text-base lg:text-lg transition-all ${activeTool === 'eraser' ? 'bg-pink-300 scale-110 shadow-none translate-y-1' : 'bg-white hover:bg-gray-100 active:translate-y-1 active:shadow-none'}`}
                 title="Dùng cục tẩy"
               >
                 🧽
               </button>
             </div>
 
+            {/* ĐÃ SỬA: Tăng kích thước nút xóa */}
             <button
               onClick={handleClearCanvas}
-              className="absolute bottom-2 right-2 lg:bottom-3 lg:right-3 w-7 h-7 sm:w-9 sm:h-9 lg:w-11 lg:h-11 bg-red-400 hover:bg-red-300 text-white rounded-full border-2 sm:border-4 border-gray-800 shadow-[2px_2px_0px_0px_rgba(31,41,55,1)] flex items-center justify-center text-sm lg:text-lg active:translate-y-1 active:shadow-none transition-all z-10"
+              className="absolute bottom-2 right-2 lg:bottom-3 lg:right-3 w-10 h-10 sm:w-11 sm:h-11 lg:w-11 lg:h-11 bg-red-400 hover:bg-red-300 text-white rounded-full border-4 border-gray-800 shadow-[3px_3px_0px_0px_rgba(31,41,55,1)] flex items-center justify-center text-base lg:text-lg active:translate-y-1 active:shadow-none transition-all z-10"
               title="Xóa hình vẽ"
             >
               🗑️
@@ -266,23 +270,22 @@ export default function GameScreen({ setScreen, currentWord, onNextRound, hintsL
               : 'opacity-0 -translate-y-12 pointer-events-none'
               }`}
           >
-            <div className="bg-white border-2 lg:border-4 border-gray-800 rounded-xl p-2 lg:p-3 shadow-[2px_2px_0px_0px_rgba(31,41,55,1)] flex flex-col items-center animate-float">
-              {/* @ts-ignore */}
+            <div className="bg-white border-4 border-gray-800 rounded-xl p-3 lg:p-3 shadow-[3px_3px_0px_0px_rgba(31,41,55,1)] flex flex-col items-center animate-float">
               <img
                 src={REAL_IMAGES[currentWord?.word]}
                 alt={currentWord?.word}
-                className="w-16 h-16 lg:w-24 lg:h-24 object-cover rounded-lg"
+                className="w-20 h-20 lg:w-24 lg:h-24 object-cover rounded-lg"
               />
-              <span className="font-black text-gray-700 text-[10px] lg:text-sm uppercase mt-1">{currentWord?.word}</span>
+              <span className="font-black text-gray-700 text-xs lg:text-sm uppercase mt-1">{currentWord?.word}</span>
             </div>
           </div>
         )}
       </div>
 
-      <div className="flex justify-center items-center gap-2 mt-2 lg:mt-3 shrink-0">
-        <div className={`text-2xl sm:text-3xl lg:text-4xl ${isCorrect ? 'animate-bounce' : 'animate-pulse'}`}>🤖</div>
+      <div className="flex justify-center items-center gap-3 mt-3 lg:mt-3 shrink-0">
+        <div className={`text-4xl sm:text-4xl lg:text-4xl ${isCorrect ? 'animate-bounce' : 'animate-pulse'}`}>🤖</div>
 
-        <div className={`${isCorrect ? 'bg-green-500' : 'bg-blue-500'} text-white font-bold text-[10px] sm:text-xs lg:text-base px-3 lg:px-5 py-1.5 lg:py-2.5 rounded-xl sm:rounded-2xl rounded-tl-none border-2 sm:border-4 border-gray-800 shadow-[2px_2px_0px_0px_rgba(31,41,55,1)] w-full max-w-xs sm:max-w-sm lg:max-w-md text-center break-words transition-colors`}>
+        <div className={`${isCorrect ? 'bg-green-500' : 'bg-blue-500'} text-white font-bold text-sm sm:text-base lg:text-base px-5 lg:px-5 py-2.5 lg:py-2.5 rounded-2xl rounded-tl-none border-4 border-gray-800 shadow-[3px_3px_0px_0px_rgba(31,41,55,1)] w-full max-w-sm lg:max-w-md text-center break-words transition-colors`}>
           {aiGuess}
         </div>
       </div>
