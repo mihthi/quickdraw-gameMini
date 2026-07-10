@@ -2,20 +2,20 @@ import React from 'react';
 
 // Khai báo 2 đường dẫn ảnh
 const img1_desktop = "/assets/img1.jpg";
-const img1_mobile = "/assets/background-for-phone.png"; // <-- Ảnh dọc bạn chuẩn bị cho điện thoại
+const img1_mobile = "/assets/background-for-phone.png"; 
 
 export default function HomeScreen({ setScreen, onStart, isStarting }: any) {
   return (
     <div className="h-full w-full relative flex flex-col items-center justify-center lg:justify-normal p-4 lg:p-6 bg-sky-200 overflow-hidden">
       
-      {/* ẢNH NỀN CHO ĐIỆN THOẠI (Chỉ hiện trên mobile, tự động cắt (cover) cho vừa màn hình) */}
+      {/* ẢNH NỀN CHO ĐIỆN THOẠI: ĐÃ SỬA thêm 'blur-[2px]' để làm mờ ảnh */}
       <img 
         src={img1_mobile} 
         alt="background mobile" 
-        className="absolute inset-0 w-full h-full object-cover block lg:hidden pointer-events-none"
+        className="absolute inset-0 w-full h-full object-cover block lg:hidden pointer-events-none blur-[0.5px]"
       />
 
-      {/* ẢNH NỀN CHO LAPTOP/IPAD (Chỉ hiện trên màn hình lớn, ép giãn 100% như cũ) */}
+      {/* ẢNH NỀN CHO LAPTOP/IPAD: Giữ nguyên, không làm mờ */}
       <img 
         src={img1_desktop} 
         alt="background desktop" 
@@ -23,16 +23,18 @@ export default function HomeScreen({ setScreen, onStart, isStarting }: any) {
         style={{ objectFit: 'fill' }} 
       />
 
-      {/* Lớp màng mờ che lên ảnh nền */}
-      <div className="absolute inset-0 bg-white/10 pointer-events-none z-0"></div>
+      {/* ĐÃ SỬA: Lớp màng mờ. Đổi thành bg-black/20 trên điện thoại để làm tối nền giúp chữ nổi bật hơn, laptop giữ bg-white/10 */}
+      <div className="absolute inset-0 bg-black/20 lg:bg-white/10 pointer-events-none z-0"></div>
 
       {/* --- NỘI DUNG CHÍNH (Tiêu đề) --- */}
       <div className="z-10 flex flex-col items-center mt-4 sm:mt-8 lg:mt-8 text-center w-full px-4 shrink-0">
-        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white uppercase tracking-wider"
+        {/* ĐÃ SỬA: Tăng cỡ chữ Cuộc Phiêu Lưu trên mobile (text-4xl) */}
+        <h1 className="text-4xl sm:text-5xl lg:text-5xl font-black text-white uppercase tracking-wider"
           style={{ textShadow: '4px 4px 0px #1f2937, -2px -2px 0 #1f2937, 2px -2px 0 #1f2937, -2px 2px 0 #1f2937, 2px 2px 0 #1f2937' }}>
           Cuộc Phiêu Lưu
         </h1>
-        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-yellow-300 uppercase tracking-wider mt-2 lg:mt-2"
+        {/* ĐÃ SỬA: Tăng cỡ chữ Vẽ Của Artie trên mobile (text-3xl) */}
+        <h1 className="text-3xl sm:text-4xl lg:text-4xl font-black text-yellow-300 uppercase tracking-wider mt-2 lg:mt-2"
           style={{ textShadow: '4px 4px 0px #1f2937, -2px -2px 0 #1f2937, 2px -2px 0 #1f2937, -2px 2px 0 #1f2937, 2px 2px 0 #1f2937' }}>
           Vẽ Của Artie
         </h1>
