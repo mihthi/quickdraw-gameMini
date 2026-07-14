@@ -546,7 +546,7 @@
                                 },
                                 "registered_name": null
                             },
-                            "units": 20,
+                            "units": 38,
                             "activation": "softmax",
                             "use_bias": true,
                             "kernel_initializer": {
@@ -593,7 +593,7 @@
                 "class_name": "Adam",
                 "config": {
                     "name": "adam",
-                    "learning_rate": 1.6000001323845936e-06,
+                    "learning_rate": 9.999999974752427e-07,
                     "weight_decay": null,
                     "clipnorm": null,
                     "global_clipnorm": null,
@@ -799,14 +799,14 @@
                     "name": "dense_1/kernel",
                     "shape": [
                         256,
-                        20
+                        38
                     ],
                     "dtype": "float32"
                 },
                 {
                     "name": "dense_1/bias",
                     "shape": [
-                        20
+                        38
                     ],
                     "dtype": "float32"
                 }

@@ -20,6 +20,26 @@ export const REAL_IMAGES: Record<string, string> = {
   'Mặt trăng': '/assets/moon.jpg',
   'Cái ô': '/assets/umbrella.jpg',
   'Cây kem': '/assets/ice-cream.jpg',
+  // Thêm mới
+  'Con kiến': '/assets/ant.jpg',
+  'Con ong': '/assets/bee.jpg',
+  'Vương miện': '/assets/crown.jpg',
+  'Hamburger': '/assets/hamburger.jpg',
+  'Đại dương': '/assets/ocean.jpg',
+  'Cái bàn': '/assets/table.jpg',
+  'Áo thun': '/assets/t-shirt.jpg',
+  'Áo len': '/assets/sweater.jpg',
+  'Bình hoa': '/assets/vase.jpg',
+  'Con rắn': '/assets/snake.jpg',
+  'Ngọn núi': '/assets/mountain.jpg',
+  'Cây nấm': '/assets/mushroom.jpg',
+  'Bánh donut': '/assets/donut.jpg',
+  'Cây nến': '/assets/candle.jpg',
+  'Con bướm': '/assets/butterfly.jpg',
+  'Chiếc lá': '/assets/leaf.jpg',
+  'Kẹo mút': '/assets/lollipop.jpg',
+  'Con muỗi': '/assets/mosquito.jpg',
+
 };
 
 // Hàm hỗ trợ để lấy ảnh an toàn (tránh lỗi nếu quên chưa thêm ảnh nào đó)

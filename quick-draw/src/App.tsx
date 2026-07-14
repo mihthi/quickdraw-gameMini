@@ -37,19 +37,19 @@ export default function DrawingGameApp() {
       if (data && data.length > 0) {
         const shuffledWords = [...data].sort(() => 0.5 - Math.random());
         const random3Words = shuffledWords.slice(0, 3).map((dbWord, index) => ({
-          id: index + 1,       
-          word: dbWord.word,   
-          emoji: dbWord.emoji, 
-          label: dbWord.label, 
+          id: index + 1,
+          word: dbWord.word,
+          emoji: dbWord.emoji,
+          label: dbWord.label,
           user: 'Bạn',
           shared: false,
-          drawingData: null    
+          drawingData: null
         }));
 
-        setGameDrawings(random3Words); 
+        setGameDrawings(random3Words);
         setCurrentRound(0);
         setHintsLeft(3);
-        setCurrentScreen('ready'); 
+        setCurrentScreen('ready');
       }
     } catch (error) {
       console.error("Lỗi khi tải danh sách từ khóa:", error);
@@ -60,27 +60,28 @@ export default function DrawingGameApp() {
   };
 
   const handleNextRound = (drawingData: any, isWin: boolean) => {
-    setCurrentRound(prevRound => {
-      setGameDrawings(prevDrawings => {
-        const updated = [...prevDrawings];
-        if (updated[prevRound]) {
-          updated[prevRound].drawingData = drawingData;
-          updated[prevRound].isWin = isWin;
-        }
-        return updated;
-      });
-
-      const nextRound = prevRound + 1;
-      if (nextRound < 3) { 
-        setCurrentScreen('ready');
-        return nextRound;
-      } else {
-        setCurrentScreen('summary');
-        return prevRound;
+    // 1. Cập nhật dữ liệu nét vẽ TRƯỚC (Đảm bảo tính bất biến)
+    setGameDrawings(prevDrawings => {
+      const updated = [...prevDrawings];
+      if (updated[currentRound]) {
+        // ✅ TẠO OBJECT MỚI THAY VÌ SỬA TRỰC TIẾP
+        updated[currentRound] = {
+          ...updated[currentRound],
+          drawingData: drawingData,
+          isWin: isWin
+        };
       }
+      return updated;
     });
-  };
 
+    // 2. Tăng vòng chơi và chuyển màn hình SAU
+    if (currentRound < 2) {
+      setCurrentRound(prev => prev + 1);
+      setCurrentScreen('ready');
+    } else {
+      setCurrentScreen('summary');
+    }
+  };
   const currentWordObj = gameDrawings[currentRound] || null;
 
   const renderScreen = () => {
