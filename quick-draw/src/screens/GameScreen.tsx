@@ -49,7 +49,7 @@ export default function GameScreen({ setScreen, currentWord, onNextRound, hintsL
 
     const timer = setTimeout(() => {
       runAIPrediction();
-    }, 200); 
+    }, 200);
 
     return () => clearTimeout(timer);
   }, [strokes, isCorrect, isAiReady]);
@@ -57,7 +57,7 @@ export default function GameScreen({ setScreen, currentWord, onNextRound, hintsL
   useEffect(() => {
     setIsCorrect(false);
     setTimeLeft(20);
-    isRoundEndedRef.current = false; 
+    isRoundEndedRef.current = false;
     handleClearCanvas();
 
     if (!isAiReady) setAiGuess("Đang khởi động AI...");
@@ -84,7 +84,7 @@ export default function GameScreen({ setScreen, currentWord, onNextRound, hintsL
 
   useEffect(() => {
     if (timeLeft === 0 && !isCorrect && !isRoundEndedRef.current) {
-      isRoundEndedRef.current = true; 
+      isRoundEndedRef.current = true;
       if (isDrawingRef.current && currentPathRef.current.x.length > 0) {
         const newStroke = [currentPathRef.current.x, currentPathRef.current.y];
         strokesRef.current = [...strokesRef.current, newStroke];
@@ -126,7 +126,7 @@ export default function GameScreen({ setScreen, currentWord, onNextRound, hintsL
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     setStrokes([]);
-    strokesRef.current = []; 
+    strokesRef.current = [];
     setAiGuess("Hãy vẽ đi, AI đang xem...");
   };
 
@@ -193,21 +193,26 @@ export default function GameScreen({ setScreen, currentWord, onNextRound, hintsL
     }, 50);
   };
 
- return (
+  return (
     <div className="h-full w-full bg-emerald-200 p-3 sm:p-4 lg:p-4 flex flex-col relative">
-      
+
       <div className="flex justify-between items-center mb-2.5 lg:mb-3 z-10 gap-2 w-full shrink-0">
         <div className="flex items-center gap-2 lg:gap-2 flex-1 min-w-0">
-          {/* ĐÃ SỬA: Tăng kích thước nút back */}
           <button onClick={() => setScreen('home')} className="w-10 h-10 sm:w-11 sm:h-11 lg:w-11 lg:h-11 bg-white border-4 border-gray-800 rounded-full flex justify-center items-center text-sm sm:text-base lg:text-lg font-bold shadow-[3px_3px_0px_0px_rgba(31,41,55,1)] hover:bg-gray-100 active:translate-y-1 active:shadow-none shrink-0">⬅</button>
-          <h2 className="text-sm sm:text-base lg:text-lg font-black bg-white px-3 sm:px-4 lg:px-5 py-2 sm:py-2 rounded-full border-4 border-gray-800 shadow-[3px_3px_0px_0px_rgba(31,41,55,1)] text-blue-600 truncate">
+
+          {/* ĐÃ SỬA 1: Bỏ class 'truncate' và thay bằng 'whitespace-nowrap' để chữ không bao giờ bị cắt ... */}
+          <h2 className="text-sm sm:text-base lg:text-lg font-black bg-white px-3 sm:px-4 lg:px-5 py-2 sm:py-2 rounded-full border-4 border-gray-800 shadow-[3px_3px_0px_0px_rgba(31,41,55,1)] text-blue-600 whitespace-nowrap">
             Vẽ: {currentWord?.word?.toUpperCase()}
           </h2>
         </div>
+
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-          <div className={`bg-white px-3 sm:px-4 lg:px-4 py-2 sm:py-2 rounded-full border-4 border-gray-800 shadow-[3px_3px_0px_0px_rgba(31,41,55,1)] text-xs sm:text-sm lg:text-base font-black flex items-center gap-0.5 ${isCorrect ? 'text-green-500' : ''}`}>
+          <div className={`px-3 sm:px-4 lg:px-4 py-2 sm:py-2 rounded-full border-4 border-gray-800 shadow-[3px_3px_0px_0px_rgba(31,41,55,1)] text-xs sm:text-sm lg:text-base font-black flex items-center gap-0.5 transition-all
+            ${isCorrect ? 'bg-white text-green-500' :
+              timeLeft <= 5 ? 'bg-red-500 text-white animate-pulse' : 'bg-white text-gray-900'}`}>
             ⏱️{timeLeft}s
           </div>
+
           <button
             onClick={handleShowHint}
             disabled={hintsLeft === 0 || hintStatus !== 'IDLE' || isCorrect}
@@ -215,6 +220,20 @@ export default function GameScreen({ setScreen, currentWord, onNextRound, hintsL
           >
             💡 Gợi ý {hintsLeft > 0 && `(${hintsLeft})`}
           </button>
+
+          {/* ĐÃ SỬA 2: Đổi nút thành hình tròn (w-10 h-10), bỏ chữ, thêm thuộc tính title để hiện tooltip khi hover */}
+          <button
+            onClick={() => {
+              isRoundEndedRef.current = true;
+              onNextRound(strokesRef.current, false);
+            }}
+            disabled={isCorrect}
+            title="Bỏ qua"
+            className={`${isCorrect ? 'bg-gray-400 opacity-80' : 'bg-orange-400 hover:bg-orange-300 active:translate-y-1'} w-10 h-10 sm:w-11 sm:h-11 lg:w-11 lg:h-11 rounded-full border-4 border-gray-800 shadow-[3px_3px_0px_0px_rgba(31,41,55,1)] active:shadow-none flex items-center justify-center text-sm sm:text-base lg:text-lg transition-all shrink-0`}
+          >
+            ⏭️
+          </button>
+
         </div>
       </div>
 
