@@ -1,0 +1,199 @@
+/* Bao phủ toàn bộ màn hình và set background */
+.level-screen-container {
+  width: 100%; /* Đã sửa từ 110% thành 100% để vừa khít màn hình */
+  height: 100%;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Nunito', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  overflow: hidden;
+  margin: 0;
+  padding: 16px;
+}
+
+/* --- NÚT TRỞ VỀ --- */
+.back-btn {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  background-color: white;
+  border: 3px solid #5b2a86;
+  color: #5b2a86;
+  font-weight: 800;
+  font-size: 14px;
+  border-radius: 20px;
+  padding: 6px 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 3px 0 #5b2a86;
+  transition: all 0.1s ease;
+  z-index: 30;
+}
+.back-btn:active {
+  transform: translateY(3px);
+  box-shadow: 0 0 0 #5b2a86;
+}
+
+/* --- BẢNG GỖ TRUNG TÂM --- */
+.wood-board {
+  position: relative;
+  background-color: #fcecd5;
+  border-radius: 24px;
+  padding: 8px;
+  border: 8px solid #e09f5b; /* Tinh chỉnh lại độ dày viền */
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+  z-index: 10;
+  width: 100%;
+  max-width: 440px; /* Giới hạn chiều rộng tối đa vừa vặn khung hình */
+}
+
+.board-content {
+  background-color: #fdf5e6;
+  border-radius: 16px;
+  padding: 20px 16px; /* Giảm padding từ 30px 60px xuống mức vừa phải */
+  text-align: center;
+}
+
+/* --- TIÊU ĐỀ --- */
+.main-title {
+  font-size: 26px; /* Thu nhỏ từ 42px xuống 26px */
+  font-weight: 900;
+  line-height: 1.2;
+  margin-bottom: 6px;
+  text-shadow: 1px 1px 0px rgba(0,0,0,0.1);
+}
+.text-pink { color: #ff5e7e; }
+.text-blue { color: #40a2e3; }
+.text-yellow { color: #ffb703; }
+
+.subtitle {
+  font-size: 14px; /* Giảm từ 20px xuống 14px */
+  font-weight: 800;
+  color: #555;
+  margin-bottom: 18px;
+}
+
+/* --- NÚT CHỌN CẤP ĐỘ --- */
+.cards-container {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  width: 100%;
+}
+.level-card {
+  flex: 1; 
+  width: 160px; /* Chiều rộng cố định */
+  height: 140px; /* Chiều cao cố định */
+  border: 4px solid #374151; /* Thêm viền xám đậm để nút sắc nét hơn */
+  border-radius: 20px; /* Bo góc tròn cho nút */
+  background-color: white; /* Nền trắng dự phòng */
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative; /* Bắt buộc để giữ ảnh bên trong */
+  padding: 0;
+  transition: transform 0.15s ease;
+  overflow: hidden; /* QUAN TRỌNG: Ép hình ảnh bên trong phải bo góc theo viền và không bị tràn */
+  transition: all 0.2s ease;
+}
+
+.level-card h2 {
+  font-size: 18px; /* Cỡ chữ nút gọn gàng hơn */
+  margin: 0;
+  font-weight: 900;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+}
+
+.level-card p {
+  margin: 4px 0 0;
+  font-weight: bold;
+  font-size: 12px;
+  opacity: 0.9;
+}
+
+/* Màu và bóng 3D cho từng nút */
+.elementary-card {
+  background-color: #3b82f6;
+  box-shadow: 0 6px 0 #1d4ed8; 
+}
+.elementary-card:active {
+  transform: translateY(6px);
+  box-shadow: 0 0 0 #1d4ed8;
+}
+
+.secondary-card {
+  background-color: #f97316;
+  box-shadow: 0 6px 0 #c2410c;
+}
+.secondary-card:active {
+  transform: translateY(6px);
+  box-shadow: 0 0 0 #c2410c;
+}
+
+/* --- HIỆU ỨNG ROBOT --- */
+.floating-robot {
+  position: absolute;
+  bottom: 20px;
+  right: 5px;
+  width: 180px; /* Thu nhỏ robot để không đè lên bảng chọn */
+  z-index: 20;
+  pointer-events: none;
+  animation: float 3s ease-in-out infinite;
+}
+
+/* Keyframes làm robot lơ lửng */
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
+}
+.level-card:active {
+  transform: scale(0.92);
+}
+.card-bg-img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* QUAN TRỌNG: Dùng cover để ảnh tự động phóng to lấp đầy nút mà không bị méo */
+  z-index: 1;
+  transform: scale(1.1);
+}
+
+/* Khung chữ nhỏ dán đè ở giữa nút */
+.card-label {
+  position: absolute; /* Dùng absolute để có thể tự do di chuyển nhãn */
+  bottom: 12px; /* Khoảng cách từ nhãn đến viền dưới của nút */
+  left: 50%; /* Đẩy mỏ neo ra giữa nút */
+  transform: translateX(-50%); /* Dịch chuyển chính xác về tâm */
+  z-index: 2; 
+  background-color: rgba(255, 255, 255, 0.95); 
+  color: #374151; 
+  font-size: 14px; /* Chữ nhỏ lại một chút cho thanh thoát */
+  font-weight: 900;
+  padding: 4px 14px;
+  border-radius: 10px;
+  border: 3px solid #374151;
+  box-shadow: 2px 2px 0px rgba(31, 41, 55, 1);
+  text-align: center;
+  white-space: nowrap; /* Đảm bảo chữ trên một dòng, không bị rớt chữ */
+}
+.level-card:hover {
+  transform: scale(1.05); /* Phóng to nút lên một chút (5%) */
+  box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.3); /* Thêm bóng đổ đen mờ phía dưới */
+  border-color: #ffb703; /* Đổi viền xám thành viền màu vàng rực rỡ */
+  z-index: 10; /* Đảm bảo khi nút to lên không bị nút bên cạnh đè vào */
+}
+.level-card:hover .card-label {
+  background-color: #ffb703; /* Nền nhãn đổi sang màu vàng */
+  color: white; /* Chữ đổi sang màu trắng */
+  border-color: #ffb703;
+}
